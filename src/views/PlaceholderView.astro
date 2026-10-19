@@ -1,0 +1,28 @@
+---
+/* Trang khung cho các tab chưa có nội dung (Giải pháp, Bài tập) — chủ dự án sẽ bổ sung dần */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/SectionHeading.astro';
+import { useTranslations, type Lang } from '@/i18n/ui';
+
+interface Props {
+  lang: Lang;
+  /** Khóa nhãn tab trong i18n, ví dụ 'nav.solutions' */
+  navKey: 'nav.solutions' | 'nav.exercises';
+}
+const { lang, navKey } = Astro.props;
+const t = useTranslations(lang);
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const label = t(navKey);
+---
+
+<BaseLayout lang={lang} title={label} description={L(`${label} — Hiếu Vũ | Engineering`, `${label} — Hieu Vu | Engineering`)} noindex>
+  <section class="bg-grid min-h-[60svh] pb-16 pt-32 md:pt-40">
+    <div class="container-x">
+      <SectionHeading as="h1" eyebrow={label} title={label} />
+      <p class="mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm text-muted">
+        <span class="h-2 w-2 rounded-full bg-accent" aria-hidden="true"></span>
+        {L('Nội dung đang được cập nhật.', 'Content coming soon.')}
+      </p>
+    </div>
+  </section>
+</BaseLayout>

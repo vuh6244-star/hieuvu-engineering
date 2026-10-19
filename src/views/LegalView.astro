@@ -1,0 +1,94 @@
+---
+/*
+  Trang pháp lý: Chính sách bảo mật (/privacy) & Điều khoản sử dụng (/terms), song ngữ.
+  Nội dung bám đúng cách website đang hoạt động (form liên hệ, bản tin, cookie GA có hỏi đồng ý, lưu giao diện/ngôn ngữ).
+  Đây là bản soạn sẵn — chủ dự án nên rà lại (hoặc nhờ tư vấn pháp lý) trước khi go-live.
+*/
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/SectionHeading.astro';
+import { site } from '@/data/site';
+import { localize, type Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang; page: 'privacy' | 'terms' }
+const { lang, page } = Astro.props;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const updated = L('Cập nhật lần cuối: 19/10/2026', 'Last updated: 19 October 2026');
+const mail = `<a href="mailto:${site.email}">${site.email}</a>`;
+
+type Sec = { h: string; p: string[] };
+const privacy: Sec[] = [
+  { h: L('1. Thông tin được thu thập', '1. Information we collect'), p: [
+    L('Khi bạn gửi form Liên hệ: họ tên, email, công ty/tổ chức, số điện thoại/Zalo, loại yêu cầu và nội dung mô tả bài toán bạn tự nhập.', 'When you submit the contact form: your name, email, company, phone/Zalo number, request type and the problem description you enter.'),
+    L('Khi bạn đăng ký Bản tin kỹ thuật CFD: địa chỉ email.', 'When you subscribe to the CFD newsletter: your email address.'),
+    L('Dữ liệu truy cập ẩn danh (trang đã xem, thiết bị, trình duyệt) qua Google Analytics — chỉ khi bạn bấm “Đồng ý” trên thông báo cookie.', 'Anonymous usage data (pages viewed, device, browser) via Google Analytics — only if you click “Accept” on the cookie notice.'),
+  ] },
+  { h: L('2. Mục đích sử dụng', '2. How we use it'), p: [
+    L('Phản hồi yêu cầu, trao đổi phạm vi kỹ thuật, gửi đề xuất và báo giá.', 'To reply to your request, discuss technical scope, and send proposals and quotations.'),
+    L('Gửi bản tin kỹ thuật (tối đa 2 email/tháng). Bạn có thể hủy đăng ký bất cứ lúc nào.', 'To send the technical newsletter (at most 2 emails a month). You can unsubscribe at any time.'),
+    L('Cải thiện nội dung website dựa trên số liệu truy cập tổng hợp.', 'To improve the website based on aggregated usage statistics.'),
+  ] },
+  { h: L('3. Chia sẻ thông tin', '3. Sharing'), p: [
+    L('Chúng tôi không bán hay cho thuê thông tin cá nhân. Thông tin chỉ được chia sẻ với đội ngũ CFDWAYS khi cần để thực hiện dự án hoặc báo giá cho bạn.', 'We never sell or rent personal data. It is shared with the CFDWAYS team only when needed to deliver your project or quotation.'),
+    L('Dữ liệu kỹ thuật (CAD, thông số vận hành) được bảo mật; có thể ký NDA trước khi trao đổi.', 'Technical data (CAD, operating data) is kept confidential; an NDA can be signed before any exchange.'),
+  ] },
+  { h: L('4. Lưu trữ & bảo mật', '4. Storage & security'), p: [
+    L('Thông tin được lưu trong thời gian cần thiết cho mục đích nêu trên và được bảo vệ bằng các biện pháp kỹ thuật hợp lý. Website dùng kết nối mã hóa HTTPS.', 'Data is kept only as long as needed for the purposes above and protected with reasonable technical measures. The website uses encrypted HTTPS connections.'),
+  ] },
+  { h: L('5. Cookie & lưu trữ trên trình duyệt', '5. Cookies & browser storage'), p: [
+    L('Website lưu trên trình duyệt của bạn: lựa chọn giao diện sáng/tối, ngôn ngữ, và lựa chọn đồng ý/từ chối cookie. Cookie phân tích chỉ được bật khi bạn đồng ý.', 'The site stores in your browser: your light/dark theme, language, and cookie consent choice. Analytics cookies are only enabled with your consent.'),
+  ] },
+  { h: L('6. Quyền của bạn', '6. Your rights'), p: [
+    L(`Bạn có thể yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân của mình bằng cách gửi email tới ${mail}.`, `You can ask to access, correct or delete your personal data by emailing ${mail}.`),
+  ] },
+];
+const terms: Sec[] = [
+  { h: L('1. Phạm vi', '1. Scope'), p: [
+    L(`Khi truy cập ${site.url.replace('https://', '')}, bạn đồng ý với các điều khoản dưới đây. Nếu không đồng ý, vui lòng ngừng sử dụng website.`, `By using ${site.url.replace('https://', '')} you agree to these terms. If you do not agree, please stop using the website.`),
+  ] },
+  { h: L('2. Nội dung mang tính tham khảo', '2. Informational content'), p: [
+    L('Bài viết, case study và Demo trên website nhằm chia sẻ kiến thức và minh họa năng lực. Một số số liệu là nội dung mẫu minh họa, không thay thế tư vấn kỹ thuật cho dự án cụ thể.', 'Articles, case studies and demos are shared for knowledge and to illustrate capability. Some figures are illustrative samples and do not replace engineering advice for a specific project.'),
+  ] },
+  { h: L('3. Bản quyền', '3. Intellectual property'), p: [
+    L(`Văn bản, hình ảnh, mô phỏng và mã nguồn hiển thị trên website thuộc ${site.brand}, trừ khi ghi chú khác. Khi trích dẫn vui lòng ghi rõ nguồn và dẫn liên kết về website.`, `Text, images, simulations and code shown on the site belong to ${site.brand} unless stated otherwise. Please credit and link back when quoting.`),
+    L('Siemens, Simcenter, STAR-CCM+, NX, Amesim, FloEFD, FloTherm là nhãn hiệu của Siemens. Các nhãn hiệu khác thuộc chủ sở hữu tương ứng.', 'Siemens, Simcenter, STAR-CCM+, NX, Amesim, FloEFD and FloTherm are trademarks of Siemens. Other trademarks belong to their respective owners.'),
+  ] },
+  { h: L('4. Dịch vụ & báo giá', '4. Services & quotations'), p: [
+    L('Phạm vi, tiến độ và chi phí của từng dự án mô phỏng, đào tạo hoặc license được thống nhất trong đề xuất/hợp đồng riêng, triển khai cùng CFDWAYS.', 'Scope, timeline and cost of each simulation, training or licensing engagement are agreed in a separate proposal/contract, delivered with CFDWAYS.'),
+  ] },
+  { h: L('5. Liên kết bên ngoài', '5. External links'), p: [
+    L('Website có liên kết tới YouTube, LinkedIn, Facebook, TikTok, Zalo và các trang khác. Chúng tôi không chịu trách nhiệm về nội dung hay chính sách của các trang đó.', 'The site links to YouTube, LinkedIn, Facebook, TikTok, Zalo and other sites. We are not responsible for their content or policies.'),
+  ] },
+  { h: L('6. Giới hạn trách nhiệm', '6. Limitation of liability'), p: [
+    L('Chúng tôi cố gắng giữ thông tin chính xác và cập nhật, nhưng không bảo đảm website luôn không có lỗi hay gián đoạn, và không chịu trách nhiệm cho thiệt hại phát sinh từ việc tự áp dụng nội dung tham khảo.', 'We aim to keep information accurate and current but do not guarantee the site is error-free or uninterrupted, and accept no liability for damage arising from applying reference content on your own.'),
+  ] },
+  { h: L('7. Thay đổi điều khoản', '7. Changes'), p: [
+    L(`Điều khoản có thể được cập nhật; ngày cập nhật ghi ở đầu trang. Mọi câu hỏi xin gửi tới ${mail}.`, `These terms may be updated; the date is shown at the top. Questions: ${mail}.`),
+  ] },
+];
+const isPrivacy = page === 'privacy';
+const title = isPrivacy ? L('Chính sách bảo mật', 'Privacy Policy') : L('Điều khoản sử dụng', 'Terms of Service');
+const sections = isPrivacy ? privacy : terms;
+const other = isPrivacy ? { href: localize('/terms', lang), label: L('Điều khoản sử dụng', 'Terms of Service') } : { href: localize('/privacy', lang), label: L('Chính sách bảo mật', 'Privacy Policy') };
+---
+
+<BaseLayout lang={lang} title={title} description={`${title} — ${site.brand}`}>
+  <section class="bg-grid pb-20 pt-32 md:pt-40">
+    <div class="container-x max-w-3xl">
+      <SectionHeading as="h1" eyebrow={L('Pháp lý', 'Legal')} title={title} />
+      <p class="mt-4 font-mono text-xs text-muted">{updated}</p>
+      <div class="legal mt-10 space-y-9">
+        {sections.map((s) => (
+          <div>
+            <h2 class="text-lg font-semibold text-fg">{s.h}</h2>
+            {s.p.map((x) => <p class="mt-3 leading-relaxed text-fg-soft" set:html={x} />)}
+          </div>
+        ))}
+      </div>
+      <p class="mt-12 text-sm text-muted">{L('Xem thêm:', 'See also:')} <a href={other.href} class="link-arrow">{other.label}</a></p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .legal :global(a) { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+</style>

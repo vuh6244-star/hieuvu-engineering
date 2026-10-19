@@ -1,0 +1,171 @@
+---
+/*
+  "Các ngành CFD phục vụ" — lưới 8 thẻ trên nền tối (trang chủ, ngay sau khối 4 điểm thất bại).
+  Di chuột vào thẻ → nút "Xem Demo" trượt lên; bấm → trang Demo đã lọc đúng ngành (/projects?cat=…).
+  Trên màn hình cảm ứng (không có hover) nút luôn hiện.
+*/
+import Icon from './Icon.astro';
+import { localize, type Lang } from '@/i18n/ui';
+import type { ProjectCategory } from '@/data/site';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const demo = (cat: ProjectCategory) => `${localize('/projects', lang)}?cat=${cat}`;
+
+/* Biểu tượng nét mảnh 48×48, tô bằng gradient thương hiệu (cyan → xanh) */
+const icons: Record<string, string> = {
+  power: '<path d="M8 42V22l8-5v25M16 42V26l8-5v21M24 42V18h8v24M32 42V10h6v32M4 42h40"/><path d="M35 10c0-3 3-4 3-7"/><path d="M28 18c0-2 2-3 2-5"/>',
+  emission: '<path d="M10 42V18h8v24M30 42V26h10v16M6 42h38M18 30h12"/><path d="M14 18c-3-3 0-6-2-9M14 9c2-2 5-1 6-4"/><circle cx="24" cy="12" r="2.5"/><circle cx="31" cy="8" r="1.8"/>',
+  process: '<path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 2.6 4.5h24.8A3 3 0 0 0 39 38L28 18V6"/><path d="M13 31h22"/><circle cx="20" cy="36" r="1.6"/><circle cx="27" cy="34" r="1.2"/>',
+  oil: '<path d="M14 42 22 8h4l8 34M17 30h14M19 21h10M12 8h24"/><path d="M4 42h40"/><path d="M38 34h6v8"/>',
+  hvac: '<rect x="6" y="10" width="36" height="28" rx="3"/><circle cx="24" cy="24" r="8"/><path d="M24 16v16M16 24h16M18.5 18.5l11 11M29.5 18.5l-11 11"/>',
+  datacenter: '<rect x="8" y="5" width="32" height="10" rx="2"/><rect x="8" y="19" width="32" height="10" rx="2"/><rect x="8" y="33" width="32" height="10" rx="2"/><path d="M14 10h2M14 24h2M14 38h2M24 10h10M24 24h10M24 38h10"/>',
+  pump: '<circle cx="22" cy="26" r="13"/><circle cx="22" cy="26" r="3"/><path d="M22 23c0-5 4-8 8-8M25 26c5 0 8 4 8 8M22 29c0 5-4 8-8 8M19 26c-5 0-8-4-8-8"/><path d="M35 18h8v-6h-8"/>',
+  ev: '<path d="M5 32v-5l5-9h20l7 9h6v5"/><circle cx="13" cy="33" r="4"/><circle cx="35" cy="33" r="4"/><path d="M17 33h14M10 27h33"/><path d="M22 6l-3 6h5l-3 6"/>',
+};
+
+const industries: { icon: string; title: string; desc: string; cat: ProjectCategory }[] = [
+  {
+    icon: 'power', cat: 'energy',
+    title: L('Năng lượng & Nhiệt điện', 'Power & Energy'),
+    desc: L('Lò hơi, buồng đốt, nồi hơi thu hồi nhiệt (HRSG): tối ưu phân bố gió, nhiệt độ buồng lửa và trao đổi nhiệt để giảm tiêu hao nhiên liệu.', 'Boilers, furnaces and HRSGs: optimising air distribution, furnace temperature and heat transfer to cut fuel consumption.'),
+  },
+  {
+    icon: 'emission', cat: 'energy',
+    title: L('Môi trường & Xử lý khí thải', 'Environment & Flue-gas Treatment'),
+    desc: L('DeNOx/SCR, khử lưu huỳnh, lọc bụi: đồng đều dòng khí trước xúc tác, phân bố NH₃, giảm tổn thất áp và phát thải.', 'DeNOx/SCR, desulphurisation and dust removal: uniform gas flow ahead of the catalyst, NH₃ distribution, lower pressure drop and emissions.'),
+  },
+  {
+    icon: 'process', cat: 'multiphase',
+    title: L('Hóa chất & Công nghiệp quá trình', 'Chemicals & Process Industry'),
+    desc: L('Bồn khuấy, thiết bị phản ứng, sấy phun, cyclone: thời gian trộn, vùng chết, phân bố hạt và truyền nhiệt trong thiết bị.', 'Mixing tanks, reactors, spray dryers and cyclones: mixing time, dead zones, particle distribution and in-vessel heat transfer.'),
+  },
+  {
+    icon: 'oil', cat: 'multiphase',
+    title: L('Dầu khí & Hóa dầu', 'Oil, Gas & Petrochemicals'),
+    desc: L('Dòng đa pha trong đường ống, bình tách, van và bộ trao đổi nhiệt: dự đoán tách pha, xói mòn và sụt áp trước khi lắp đặt.', 'Multiphase flow in pipelines, separators, valves and heat exchangers: predicting phase separation, erosion and pressure loss before installation.'),
+  },
+  {
+    icon: 'hvac', cat: 'hvac',
+    title: L('HVAC, Nhà xưởng & Phòng sạch', 'HVAC, Factories & Cleanrooms'),
+    desc: L('Luồng gió, nhiệt độ và chênh áp cho nhà xưởng, phòng sạch dược phẩm, nhà ga: đạt tiện nghi PMV/PPD và cấp sạch theo tiêu chuẩn.', 'Airflow, temperature and pressure cascades for factories, pharma cleanrooms and terminals: meeting PMV/PPD comfort and cleanliness classes.'),
+  },
+  {
+    icon: 'datacenter', cat: 'hvac',
+    title: L('Data Center', 'Data Centers'),
+    desc: L('Bố trí CRAC, containment lối nóng/lạnh, tấm sàn đục lỗ: loại bỏ hot-spot, hạ nhiệt độ đầu vào rack và tiết kiệm điện làm mát.', 'CRAC layout, hot/cold-aisle containment and perforated tiles: eliminating hot-spots, lowering rack inlet temperature and cooling energy.'),
+  },
+  {
+    icon: 'pump', cat: 'turbo',
+    title: L('Bơm, Quạt & Máy nén', 'Pumps, Fans & Compressors'),
+    desc: L('Đường đặc tính H-Q, hiệu suất và xâm thực của bơm ly tâm, quạt công nghiệp: so sánh cánh guồng và tìm điểm vận hành tối ưu.', 'H-Q curves, efficiency and cavitation of centrifugal pumps and industrial fans: comparing impellers and finding the best operating point.'),
+  },
+  {
+    icon: 'ev', cat: 'thermal',
+    title: L('Ô tô, Xe điện & Pin', 'Automotive, EV & Batteries'),
+    desc: L('Khí động học thân xe, làm mát pack pin và động cơ điện: giảm lực cản, kiểm soát chênh lệch nhiệt độ cell khi sạc nhanh.', 'Vehicle aerodynamics, battery-pack and e-motor cooling: lower drag and tight cell-to-cell temperature spread during fast charging.'),
+  },
+];
+---
+
+<section class="motion-ok bg-ink pb-16 pt-4 text-ink-fg md:pb-28 md:pt-8" aria-labelledby="industries-title">
+  <svg width="0" height="0" class="absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="ind-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#3ed6e0" />
+        <stop offset="1" stop-color="#3b82f6" />
+      </linearGradient>
+    </defs>
+  </svg>
+  <div class="container-x">
+    <h2 id="industries-title" class="hd hd-ink mx-auto max-w-4xl text-center text-[2rem] text-ink-fg md:text-5xl">
+      {L('Mô phỏng CFD trong các ngành công nghiệp điển hình', 'CFD simulation across key industries')}
+    </h2>
+
+    <ul class="mt-12 grid gap-3 sm:grid-cols-2 md:mt-16 lg:grid-cols-4 lg:gap-4">
+      {
+        industries.map((it, i) => (
+          <li class="reveal" style={`transition-delay:${(i % 4) * 60}ms`}>
+            <a href={demo(it.cat)} class="ind-card group" aria-label={`${it.title} — ${L('Xem Demo', 'View demo')}`}>
+              <span class="ind-glow" aria-hidden="true" />
+              <svg class="ind-icon" viewBox="0 0 48 48" width="56" height="56" fill="none" stroke="url(#ind-grad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={icons[it.icon]} />
+              <span class="ind-body">
+                <span class="block text-lg font-semibold leading-snug text-white">{it.title}</span>
+                <span class="mt-2 block text-sm leading-relaxed text-ink-muted">{it.desc}</span>
+              </span>
+              <span class="ind-cta">
+                {L('Xem Demo', 'View demo')} <Icon name="arrow-right" size={16} />
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .ind-card {
+    position: relative;
+    display: flex;
+    height: 100%;
+    min-height: 20rem;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: linear-gradient(180deg, #0b1220 0%, #0a1426 100%);
+    padding: 1.5rem;
+    transition: border-color 0.35s, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* quầng sáng cyan dâng lên từ đáy khi di chuột */
+  .ind-glow {
+    position: absolute;
+    inset: auto -20% -60% -20%;
+    height: 85%;
+    background: radial-gradient(60% 60% at 50% 100%, rgb(62 214 224 / 0.28), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.45s;
+    pointer-events: none;
+  }
+  .ind-icon { position: relative; margin-bottom: 1.25rem; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ind-body { position: relative; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ind-cta {
+    position: absolute;
+    left: 1.5rem;
+    bottom: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    background: #3ed6e0;
+    color: #04121a;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 8px 28px -8px rgb(62 214 224 / 0.65);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.35s, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s;
+  }
+  .ind-cta :global(svg) { transition: transform 0.25s; }
+
+  /* Có chuột: nút ẩn, di chuột/focus thì nội dung đẩy lên và nút trượt vào */
+  @media (hover: hover) {
+    .ind-card:hover, .ind-card:focus-visible { border-color: rgb(62 214 224 / 0.55); transform: translateY(-4px); }
+    .ind-card:hover .ind-glow, .ind-card:focus-visible .ind-glow { opacity: 1; }
+    .ind-card:hover .ind-icon, .ind-card:focus-visible .ind-icon,
+    .ind-card:hover .ind-body, .ind-card:focus-visible .ind-body { transform: translateY(-3.25rem); }
+    .ind-card:hover .ind-cta, .ind-card:focus-visible .ind-cta { opacity: 1; transform: none; }
+    .ind-card:hover .ind-cta:hover { background: #6be3ea; }
+    .ind-card:hover .ind-cta :global(svg) { transform: translateX(3px); }
+  }
+  /* Cảm ứng: nút luôn hiện, nằm dưới nội dung */
+  @media (hover: none) {
+    .ind-card { min-height: 0; justify-content: flex-start; }
+    .ind-cta { position: relative; left: auto; bottom: auto; margin-top: 1.25rem; align-self: flex-start; opacity: 1; transform: none; }
+  }
+  .ind-card:focus-visible { outline: 2px solid #3ed6e0; outline-offset: 3px; }
+</style>

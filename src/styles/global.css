@@ -76,6 +76,9 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Trang luôn tối (trang chủ): ẩn nút chuyển sáng/tối */
+[data-force-dark] [data-theme-toggle] { display: none !important; }
+
 /* ============================================================ BASE */
 @layer base {
   html {
@@ -118,7 +121,8 @@
   }
   @media (min-width: 768px) { .container-x { padding-inline: 2rem; } }
 
-  .section { padding-block: 4.5rem; }
+  .section { padding-block: 3.75rem; }
+  @media (min-width: 768px) { .section { padding-block: 4.5rem; } }
   @media (min-width: 1024px) { .section { padding-block: 7rem; } }
 
   /* Lưới kỹ thuật mờ phía sau */
@@ -128,6 +132,10 @@
       linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 48px 48px;
   }
+
+  /* Tiêu đề thống nhất theo hero: Inter đậm, chữ khít, một màu (trắng trên nền tối) — không tô màu nhấn */
+  .hd { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15 !important; text-wrap: balance; }
+  .hd-hl { color: inherit; }
 
   .eyebrow {
     display: inline-flex;
@@ -306,6 +314,8 @@
   white-space: nowrap;
 }
 
+/* Giảm chuyển động hệ thống: tắt hiệu ứng trang trí, NHƯNG giữ hiệu ứng tương tác của các khối có class .motion-ok
+   (chủ dự án tắt hiệu ứng trong Windows nhưng vẫn muốn thấy hiệu ứng rê chuột — xem CLAUDE.md) */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  :not(.motion-ok, .motion-ok *), :not(.motion-ok *)::before, :not(.motion-ok *)::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

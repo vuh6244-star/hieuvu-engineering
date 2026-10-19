@@ -31,7 +31,7 @@ Hero → Thông số năng lực → Về tôi → **Dịch vụ (mỗi thẻ d�
 **Bio ngắn (≈ 40 từ — dùng cho LinkedIn, chữ ký email)**
 > Kỹ sư mô phỏng CFD & R&D tại CFDWAYS — đối tác phần mềm của Siemens Digital Industries Software. Tôi dùng Simcenter STAR-CCM+ để giảm tiêu hao, giảm phát thải và kiểm chứng thiết kế trước khi chế tạo.
 
-**Bio dài:** xem trang Giới thiệu (`src/views/AboutView.astro` → `longBio`).
+**Bio:** trang Giới thiệu đã bỏ (10/2026); bio ngắn nằm ở `src/data/site.ts` → `bioShort`.
 
 ## 4. 20 chủ đề blog chuẩn SEO
 

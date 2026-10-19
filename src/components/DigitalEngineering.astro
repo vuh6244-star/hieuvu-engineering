@@ -1,0 +1,631 @@
+---
+/*
+  "Connecting CFD Simulation with Digital Engineering" — trang chủ, ngay sau khối 8 ngành.
+  Sơ đồ mạch tương tác (SVG, không dùng ảnh): 8 khối hệ thống + chip trung tâm + 2 điểm nghẽn.
+  Rê chuột / chạm vào khối → khối sáng lên, các đường mạch nối với nó sáng & chạy dòng, bảng mô tả bên dưới đổi nội dung.
+  PC: bảng mạch 3D nhìn thẳng, lưới 4×2 cân đối; mỗi khối mang mô hình 3D thật (hộp, trụ, hình đùn khối) · Điện thoại: lưới 2 cột cùng bộ icon.
+*/
+import type { Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+
+/* ---------- bánh răng (dùng trong icon) ---------- */
+const gear = (cx: number, cy: number, r: number, n: number) => {
+  const pts: string[] = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a0 = (i / (n * 2)) * Math.PI * 2, a1 = ((i + 1) / (n * 2)) * Math.PI * 2;
+    const rr = i % 2 ? r * 0.8 : r;
+    pts.push(`${(cx + rr * Math.cos(a0)).toFixed(1)},${(cy + rr * Math.sin(a0)).toFixed(1)}`, `${(cx + rr * Math.cos(a1)).toFixed(1)},${(cy + rr * Math.sin(a1)).toFixed(1)}`);
+  }
+  return `M${pts.join('L')}Z`;
+};
+
+/* ---------- 8 khối ---------- */
+type Node = { id: string; x: number; y: number; label: string; name: string; desc: string };
+const nodes: Node[] = [
+  { id: 'cad', x: 165, y: 150, label: '3D CAD DESIGN', name: L('Thiết kế CAD 3D', '3D CAD design'),
+    desc: L('Hình học NX/CAD là điểm khởi đầu. Mỗi thay đổi thiết kế được đẩy thẳng sang mô phỏng — không chuyển file thủ công, không mất phiên bản.', 'NX/CAD geometry is the starting point. Every design change goes straight to simulation — no manual file hand-offs, no lost revisions.') },
+  { id: 'cae', x: 455, y: 150, label: 'CAE SIMULATION', name: L('Mô phỏng CAE / CFD', 'CAE / CFD simulation'),
+    desc: L('Simcenter STAR-CCM+ kiểm chứng từng phương án: dòng chảy, nhiệt độ, áp suất, đa pha — trước khi chế tạo hay lắp đặt.', 'Simcenter STAR-CCM+ verifies every variant — flow, temperature, pressure, multiphase — before anything is built or installed.') },
+  { id: 'ana', x: 745, y: 150, label: 'ENG ANALYTICS', name: L('Phân tích kỹ thuật', 'Engineering analytics'),
+    desc: L('Kết quả mô phỏng được rút gọn thành chỉ số kỹ thuật: tổn thất áp, hiệu suất, nhiệt độ cực đại, so sánh phương án trên cùng một chuẩn.', 'Simulation results distilled into engineering KPIs: pressure drop, efficiency, peak temperature, variants compared on one baseline.') },
+  { id: 'wms', x: 1035, y: 150, label: 'WMS / WAREHOUSE', name: L('Kho & vật tư', 'Warehouse & materials'),
+    desc: L('Vật tư, phụ tùng được đặt theo đúng phương án đã kiểm chứng — giảm đặt hàng sai và tồn kho thừa.', 'Materials and spares ordered for the verified design — fewer wrong orders, less excess stock.') },
+  { id: 'erp', x: 745, y: 600, label: 'ERP / RESOURCE', name: L('ERP & nguồn lực', 'ERP & resources'),
+    desc: L('Chi phí, nguồn lực và tiến độ gắn với dữ liệu kỹ thuật thật, thay vì đối chiếu thủ công giữa các phòng ban.', 'Cost, resources and schedule tied to real engineering data instead of manual reconciliation between departments.') },
+  { id: 'cmms', x: 165, y: 600, label: 'CMMS / MAINTENANCE', name: L('Bảo trì (CMMS)', 'Maintenance (CMMS)'),
+    desc: L('Bảo trì theo trạng thái: CFD dự báo điểm nóng, xói mòn, bám bẩn để lên kế hoạch trước khi thiết bị hỏng.', 'Condition-based maintenance: CFD predicts hot-spots, erosion and fouling so work is planned before equipment fails.') },
+  { id: 'his', x: 455, y: 600, label: 'DATA HISTORIAN', name: L('Dữ liệu vận hành', 'Data historian'),
+    desc: L('Số đo cảm biến từ nhà máy hiệu chỉnh mô hình CFD; mô hình lại giải thích những gì cảm biến không đo được — nền tảng của Digital Twin.', 'Plant sensor data calibrates the CFD model; the model explains what sensors cannot see — the foundation of a digital twin.') },
+  { id: 'bi', x: 1035, y: 600, label: 'BI / BUSINESS INTEL', name: L('Báo cáo quản trị (BI)', 'Business intelligence'),
+    desc: L('Báo cáo quản trị dùng chung một nguồn dữ liệu kỹ thuật: năng lượng, hiệu suất, rủi ro và chi phí.', 'Management reporting from one engineering data source: energy, efficiency, risk and cost.') },
+];
+
+/* ---------- đường mạch: từ, tới, màu TRƯỚC (c) / SAU CFD (ca), đường đi; only: chỉ có sau CFD ---------- */
+const C = '#3ed6e0', O = '#f59e0b', R = '#ef4444', G = '#22c55e';
+const rawEdges: { a: string; b: string; c: string; d: string; only?: 'after' }[] = [
+  // hàng trên & hàng dưới
+  { a: 'cad', b: 'cae', c: C, d: 'M275 150 H345' },
+  { a: 'cae', b: 'ana', c: C, d: 'M565 150 H635' },
+  { a: 'ana', b: 'wms', c: O, d: 'M855 150 H925' },
+  { a: 'cmms', b: 'his', c: C, d: 'M275 600 H345' },
+  { a: 'his', b: 'erp', c: O, d: 'M565 600 H635' },
+  { a: 'erp', b: 'bi', c: C, d: 'M855 600 H925' },
+  // hai cạnh bên
+  { a: 'cad', b: 'cmms', c: C, d: 'M110 225 V525' },
+  { a: 'wms', b: 'bi', c: O, d: 'M1090 225 V525' },
+  // về chip trung tâm
+  { a: 'cad', b: 'chip', c: R, d: 'M220 225 V380 H556' },
+  { a: 'wms', b: 'chip', c: O, d: 'M980 225 V380 H644' },
+  { a: 'cae', b: 'chip', c: C, d: 'M455 225 V300 H585 V336' },
+  { a: 'ana', b: 'chip', c: C, d: 'M745 225 V300 H615 V336' },
+  { a: 'his', b: 'chip', c: C, d: 'M455 525 V460 H585 V424' },
+  { a: 'erp', b: 'chip', c: O, d: 'M745 525 V460 H615 V424' },
+  // ra mép bảng
+  { a: 'cad', b: '', c: C, d: 'M55 150 H0' },
+  { a: 'cmms', b: '', c: C, d: 'M55 600 H0' },
+  { a: 'wms', b: '', c: O, d: 'M1145 150 H1200' },
+  { a: 'bi', b: '', c: O, d: 'M1145 600 H1200' },
+  { a: 'cae', b: '', c: C, d: 'M455 75 V0' },
+  { a: 'ana', b: '', c: C, d: 'M745 75 V0' },
+  { a: 'his', b: '', c: C, d: 'M455 675 V760' },
+  { a: 'erp', b: '', c: C, d: 'M745 675 V760' },
+  // chỉ có sau CFD: các kết nối còn thiếu
+  { a: 'cae', b: 'his', c: G, d: 'M400 225 V525', only: 'after' },
+  { a: 'ana', b: 'bi', c: G, d: 'M800 225 V260 H1000 V525', only: 'after' },
+];
+// sau CFD: điểm nghẽn (đỏ/cam) thành xanh lá — đã thông; còn lại xanh cyan
+const edges = rawEdges.map((e) => ({ ...e, ca: e.only ? e.c : e.c === C ? C : G }));
+/* Điểm nghẽn — rê chuột làm sáng các đường liên quan */
+const alerts = [
+  { id: 'stall', x: 300, y: 380, c: R, lines: lang === 'vi' ? ['Thay đổi thiết kế bị kẹt', 'trước khi triển khai'] : ['Engineering changes', 'stall before execution'], links: ['cad'],
+    name: L('Điểm nghẽn: thay đổi thiết kế', 'Bottleneck: engineering changes'),
+    desc: L('Khi thiết kế và mô phỏng tách rời, mỗi thay đổi phải chờ chuyển file, dựng lại mô hình và kiểm tra lại. Nối CAD trực tiếp với CFD loại bỏ khoảng chờ này.', 'When design and simulation live apart, every change waits for file transfers, model rebuilds and re-checks. Linking CAD directly to CFD removes that wait.') },
+  { id: 'manual', x: 900, y: 380, c: O, lines: lang === 'vi' ? ['Thử nghiệm qua các mô hình vật lý,', 'tốn kém và làm chậm quá trình', 'đưa ra sản phẩm mới.'] : ['Physical prototype testing is', 'costly and slows down', 'new product launches.'], links: ['erp', 'his', 'wms'],
+    name: L('Điểm nghẽn: thử nghiệm trên mô hình vật lý', 'Bottleneck: physical prototype testing'),
+    desc: L('Thử nghiệm qua các mô hình vật lý, tốn kém và làm chậm quá trình đưa ra sản phẩm mới.', 'Physical prototype testing is costly and slows down new product launches.') },
+];
+/* Sau CFD — điểm nghẽn đã được tháo gỡ */
+const fixes = [
+  { id: 'stall-ok', x: 300, y: 380, c: G, lines: lang === 'vi' ? ['Thay đổi thiết kế', 'kiểm chứng trong vài giờ'] : ['Design changes', 'verified within hours'], links: ['cad', 'cae'],
+    name: L('Sau CFD: thay đổi thiết kế được kiểm chứng ngay', 'After CFD: design changes verified at once'),
+    desc: L('CAD nối thẳng với mô hình CFD tham số hóa: đổi hình học là chạy lại mô phỏng ngay, kết quả quay về đội thiết kế trong vài giờ thay vì vài tuần.', 'CAD feeds a parametric CFD model directly: change the geometry and the simulation re-runs, with results back to the design team in hours instead of weeks.') },
+  { id: 'manual-ok', x: 900, y: 380, c: G, lines: lang === 'vi' ? ['Thử nghiệm ảo bằng CFD —', 'giảm mẫu thử, rút ngắn thời gian', 'ra sản phẩm mới.'] : ['Virtual testing with CFD —', 'fewer prototypes, faster', 'new product launches.'], links: ['erp', 'his', 'wms'],
+    name: L('Sau CFD: thử nghiệm ảo thay cho mẫu thử', 'After CFD: virtual testing instead of prototypes'),
+    desc: L('Thử nghiệm ảo bằng CFD — giảm mẫu thử, rút ngắn thời gian ra sản phẩm mới.', 'Virtual testing with CFD — fewer prototypes and faster new product launches.') },
+];
+const points = [
+  { k: '01', t: L('Thiết kế → Mô phỏng', 'Design → Simulation'),
+    d: L('Hình học từ CAD đi thẳng vào Simcenter STAR-CCM+. Mỗi thay đổi thiết kế được kiểm chứng bằng CFD trước khi chế tạo, không phải chờ đến khi đã lắp đặt.', 'Geometry flows straight from CAD into Simcenter STAR-CCM+. Every design change is checked with CFD before anything is built, not after installation.') },
+  { k: '02', t: L('Mô phỏng ↔ Dữ liệu vận hành', 'Simulation ↔ Operational data'),
+    d: L('Số đo thực tế tại nhà máy dùng để hiệu chỉnh mô hình; ngược lại, mô hình giải thích những gì cảm biến không đo được — nền tảng cho Digital Twin.', 'Plant measurements calibrate the model; in return, the model explains what sensors cannot see — the foundation of a digital twin.') },
+  { k: '03', t: L('Dữ liệu → Quyết định', 'Data → Decisions'),
+    d: L('Kết quả CFD được chuyển thành chỉ số mà bảo trì, sản xuất và quản lý cùng hiểu: hiệu suất, tiêu hao năng lượng, rủi ro và chi phí.', 'CFD results become metrics that maintenance, production and management all understand: efficiency, energy use, risk and cost.') },
+];
+/* linh kiện trang trí trên bảng: [x, y, rộng, sâu, cao] */
+const deco: [number, number, number, number, number][] = [
+  [30, 330, 60, 90, 10], [1110, 330, 60, 90, 10], [560, 40, 80, 50, 8], [560, 680, 80, 50, 8],
+  [300, 250, 50, 34, 6], [850, 250, 50, 34, 6], [300, 480, 50, 34, 6], [850, 480, 50, 34, 6],
+];
+/* =====================================================================
+   Mô hình 3D cho 8 khối (toạ độ trên mặt khối 220×150; z hướng lên)
+   cu: hộp chữ nhật · cy: trụ (xếp đĩa) · ex: hình đứng đùn khối (bánh răng, đồng hồ, bánh xe, cờ lê)
+   ===================================================================== */
+type Obj =
+  | { k: 'cu'; x: number; y: number; w: number; d: number; h: number; z?: number; t: string; f: string; s: string; cls?: string; html?: string }
+  | { k: 'cy'; x: number; y: number; r: number; h: number; z?: number; c: string; top?: string; band?: string; dim?: boolean }
+  | { k: 'ex'; x: number; y: number; w: number; h: number; z?: number; depth: number; back: string; front: string; svg: string; frontSvg?: string };
+
+const STEEL = { t: 'linear-gradient(135deg,#e2e8f0,#94a3b8)', f: 'linear-gradient(#9aa5b5,#5b6576)', s: '#4b5563' };
+const DARK = { t: '#2b3340', f: '#11161e', s: '#1b212b' };
+const BOX = { t: 'linear-gradient(135deg,#e3c38b,#c9a265)', f: 'linear-gradient(90deg,transparent 46%,#d8c7a6 46%,#d8c7a6 54%,transparent 54%),linear-gradient(#bf9356,#9c7440)', s: '#8b6538' };
+const SERVER_F = 'repeating-linear-gradient(#20262f 0 3px,#0f1319 3px 9px),#1a1f27';
+const screen = (inner: string, bg = '#0c2a4a') =>
+  `<svg viewBox="0 0 100 60" preserveAspectRatio="none" style="position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px)"><rect width="100" height="60" fill="${bg}"/>${inner}</svg>`;
+const gearPath = (cx: number, cy: number, r: number, n: number) => {
+  const pts: string[] = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a0 = (i / (n * 2)) * Math.PI * 2, a1 = ((i + 1) / (n * 2)) * Math.PI * 2, rr = i % 2 ? r * 0.78 : r;
+    pts.push(`${(cx + rr * Math.cos(a0)).toFixed(1)},${(cy + rr * Math.sin(a0)).toFixed(1)}`, `${(cx + rr * Math.cos(a1)).toFixed(1)},${(cy + rr * Math.sin(a1)).toFixed(1)}`);
+  }
+  return `M${pts.join('L')}Z`;
+};
+const gearSvg = (hole = true) => `<path d="${gearPath(50, 50, 48, 12)}" fill="currentColor"/>${hole ? '<circle cx="50" cy="50" r="15" fill="#0d1117"/>' : ''}`;
+const monitor = (x: number, y: number, w: number, h: number, inner: string, bg?: string): Obj[] => [
+  { k: 'cu', x: x + w / 2 - 5, y: y + 1, w: 10, d: 5, h: 12, ...DARK },
+  { k: 'cu', x: x + w / 2 - 16, y: y - 2, w: 32, d: 10, h: 2, ...DARK },
+  { k: 'cu', x, y, w, d: 5, h, z: 12, ...DARK, f: '#0b1220', html: screen(inner, bg), cls: 'mon' },
+];
+const heat = '<defs><radialGradient id="hm"><stop offset="0" stop-color="#ef4444"/><stop offset=".35" stop-color="#facc15"/><stop offset=".65" stop-color="#22c55e"/><stop offset="1" stop-color="#1e3a8a"/></radialGradient></defs><ellipse cx="50" cy="30" rx="34" ry="22" fill="url(#hm)"/>';
+const models: Record<string, Obj[]> = {
+  cad: [
+    ...monitor(124, 34, 76, 46, '<path d="M14 44 q10-20 34-20 q16 0 26 12 l14 3 v9 h-74z" fill="none" stroke="#38bdf8" stroke-width="2.4"/><path d="M30 26 v22 M48 24 v24 M66 30 v18 M14 40 h76" stroke="#38bdf8" stroke-opacity=".5" stroke-width="1"/>'),
+    { k: 'cu', x: 132, y: 92, w: 58, d: 16, h: 4, ...DARK },
+    { k: 'cu', x: 16, y: 54, w: 96, d: 40, h: 15, z: 7, t: '', f: '', s: '', cls: 'wire' },
+    { k: 'cu', x: 36, y: 58, w: 54, d: 32, h: 13, z: 22, t: '', f: '', s: '', cls: 'wire' },
+    { k: 'ex', x: 24, y: 76, w: 18, h: 18, depth: 4, back: '#0b1220', front: '#cbd5e1', svg: '<circle cx="50" cy="50" r="48" fill="currentColor"/>', frontSvg: '<circle cx="50" cy="50" r="46" fill="#0b1220" stroke="#e0f2fe" stroke-width="8"/><circle cx="50" cy="50" r="14" fill="#e0f2fe"/>' },
+    { k: 'ex', x: 84, y: 76, w: 18, h: 18, depth: 4, back: '#0b1220', front: '#cbd5e1', svg: '<circle cx="50" cy="50" r="48" fill="currentColor"/>', frontSvg: '<circle cx="50" cy="50" r="46" fill="#0b1220" stroke="#e0f2fe" stroke-width="8"/><circle cx="50" cy="50" r="14" fill="#e0f2fe"/>' },
+  ],
+  cae: [
+    ...monitor(16, 26, 84, 52, heat, '#0b1220'),
+    ...monitor(112, 22, 92, 58, heat, '#1e3a8a'),
+    { k: 'cu', x: 34, y: 86, w: 150, d: 46, h: 3, t: 'linear-gradient(135deg,#f1f5f9,#cbd5e1)', f: '#94a3b8', s: '#64748b' },
+    { k: 'cu', x: 56, y: 96, w: 106, d: 24, h: 10, z: 3, t: 'linear-gradient(90deg,#1d4ed8,#22d3ee,#4ade80,#facc15,#ef4444)', f: 'linear-gradient(90deg,#1e3a8a,#0e7490,#15803d,#a16207,#b91c1c)', s: '#7f1d1d' },
+  ],
+  ana: [
+    ...monitor(14, 26, 92, 56, '<polyline points="6,50 22,38 36,44 52,22 68,30 92,12" fill="none" stroke="#f59e0b" stroke-width="3"/><polyline points="6,54 26,48 46,50 66,40 92,42" fill="none" stroke="#3ed6e0" stroke-width="2.4"/>', '#0b1220'),
+    ...monitor(118, 22, 88, 56, '<circle cx="32" cy="30" r="17" fill="none" stroke="#1f2937" stroke-width="9"/><circle cx="32" cy="30" r="17" fill="none" stroke="#3ed6e0" stroke-width="9" stroke-dasharray="70 107" transform="rotate(-90 32 30)"/><path d="M62 18 h28 M62 30 h20 M62 42 h28" stroke="#64748b" stroke-width="5"/>', '#0b1220'),
+    { k: 'cy', x: 44, y: 112, r: 13, h: 6, c: '#c2410c', top: '#f59e0b' },
+    { k: 'cy', x: 84, y: 116, r: 13, h: 6, c: '#64748b', top: '#cbd5e1' },
+    { k: 'cy', x: 124, y: 116, r: 13, h: 6, c: '#0f766e', top: '#2dd4bf' },
+    { k: 'cy', x: 164, y: 112, r: 13, h: 6, c: '#334155', top: '#64748b' },
+  ],
+  wms: [
+    { k: 'cu', x: 46, y: 64, w: 46, d: 44, h: 30, ...BOX },
+    { k: 'cu', x: 94, y: 64, w: 42, d: 44, h: 24, ...BOX },
+    { k: 'cu', x: 56, y: 70, w: 36, d: 34, h: 24, z: 30, ...BOX },
+    { k: 'cu', x: 138, y: 50, w: 38, d: 58, h: 46, ...BOX },
+    { k: 'cu', x: 100, y: 72, w: 30, d: 30, h: 20, z: 24, ...BOX },
+    { k: 'cy', x: 190, y: 96, r: 10, h: 20, c: '#6b7280', top: '#d1d5db' },
+    { k: 'ex', x: 12, y: 84, w: 30, h: 30, depth: 6, back: '#475569', front: '#cbd5e1', svg: gearSvg() },
+    { k: 'ex', x: 30, y: 100, w: 16, h: 16, depth: 5, back: '#475569', front: '#cbd5e1', svg: gearSvg() },
+  ],
+  erp: [
+    { k: 'cu', x: 26, y: 58, w: 38, d: 42, h: 50, t: STEEL.t, f: SERVER_F, s: STEEL.s, cls: 'srv' },
+    { k: 'cu', x: 74, y: 44, w: 44, d: 48, h: 76, t: STEEL.t, f: SERVER_F, s: STEEL.s, cls: 'srv' },
+    { k: 'cu', x: 128, y: 52, w: 40, d: 44, h: 60, t: STEEL.t, f: SERVER_F, s: STEEL.s, cls: 'srv' },
+    { k: 'cu', x: 178, y: 78, w: 18, d: 22, h: 28, ...STEEL },
+  ],
+  cmms: [
+    { k: 'ex', x: 22, y: 42, w: 70, h: 70, depth: 8, back: '#3b4250', front: '#cbd5e1', svg: gearSvg() },
+    { k: 'ex', x: 88, y: 70, w: 44, h: 44, depth: 7, back: '#3b4250', front: '#cbd5e1', svg: gearSvg() },
+    { k: 'ex', x: 120, y: 28, w: 80, h: 84, depth: 5, back: '#475569', front: '#e2e8f0',
+      svg: '<path d="M80 6 a16 16 0 1 0 14 14 l-8 8 -8-2 -2-8 8-8z M74 30 L22 82 a6 6 0 0 0 8 8 L82 38z" fill="currentColor"/>',
+      frontSvg: '<path d="M80 6 a16 16 0 1 0 14 14 l-8 8 -8-2 -2-8 8-8z M74 30 L56 48 64 56 82 38z" fill="#e2e8f0"/><path d="M56 48 L22 82 a6 6 0 0 0 8 8 L64 56z" fill="#f97316"/>' },
+  ],
+  his: [
+    { k: 'cy', x: 72, y: 70, r: 34, h: 58, c: 'linear-gradient(90deg,#4a5568,#b8c4d4 45%,#5b6b82)', top: 'radial-gradient(circle at 40% 40%,#eef2f7,#9aa8bb)', band: '#1f2937' },
+    { k: 'ex', x: 124, y: 52, w: 58, h: 58, depth: 6, back: '#475569', front: '#e5e7eb', svg: '<circle cx="50" cy="50" r="48" fill="currentColor"/>', frontSvg: '<circle cx="50" cy="50" r="47" fill="#e5e7eb" stroke="#64748b" stroke-width="6"/><path d="M50 18 v32 l20 12" stroke="#111827" stroke-width="6" fill="none" stroke-linecap="round"/>' },
+    { k: 'cu', x: 22, y: 118, w: 46, d: 14, h: 8, ...DARK },
+  ],
+  bi: [
+    { k: 'cy', x: 58, y: 84, r: 38, h: 14, c: 'conic-gradient(#3b82f6 0 30%,#22c55e 0 58%,#facc15 0 80%,#ef4444 0)', dim: true },
+    ...monitor(110, 22, 94, 56, '<g fill="#3ed6e0"><rect x="10" y="34" width="12" height="20"/><rect x="28" y="24" width="12" height="30"/><rect x="46" y="14" width="12" height="40"/></g><rect x="64" y="20" width="12" height="34" fill="#ef4444"/><rect x="82" y="30" width="12" height="24" fill="#facc15"/>', '#0b1220'),
+    { k: 'cu', x: 130, y: 98, w: 70, d: 5, h: 34, z: 2, ...DARK, f: '#0b1220', html: screen('<path d="M8 48 l18-16 14 8 22-22 30 10" fill="none" stroke="#f59e0b" stroke-width="3"/>', '#0b1220'), cls: 'mon' },
+  ],
+};
+const layers = (n: number) => Array.from({ length: n }, (_, i) => i);
+const linked = (id: string) => edges.map((e, i) => (e.a === id || e.b === id ? i : -1)).filter((i) => i >= 0).join(' ');
+---
+
+<section class="motion-ok relative overflow-hidden bg-ink pb-16 pt-4 text-ink-fg md:pb-28 md:pt-8" aria-labelledby="digital-title" data-de data-state="before">
+  <!-- Bộ icon (dùng chung cho bảng mạch PC và lưới điện thoại) -->
+  <svg width="0" height="0" class="absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="de-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#232a35" /><stop offset="1" stop-color="#12161d" /></linearGradient>
+      <linearGradient id="de-steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d0dc" /><stop offset="0.55" stop-color="#7c8696" /><stop offset="1" stop-color="#3b424e" /></linearGradient>
+      <linearGradient id="de-rain" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1d4ed8" /><stop offset="0.3" stop-color="#22d3ee" /><stop offset="0.55" stop-color="#4ade80" /><stop offset="0.78" stop-color="#facc15" /><stop offset="1" stop-color="#ef4444" /></linearGradient>
+      <radialGradient id="de-heat"><stop offset="0" stop-color="#ef4444" /><stop offset="0.35" stop-color="#facc15" /><stop offset="0.65" stop-color="#22c55e" /><stop offset="1" stop-color="#1e3a8a" /></radialGradient>
+      <linearGradient id="de-box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b47a" /><stop offset="1" stop-color="#a47c45" /></linearGradient>
+      <linearGradient id="de-db" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5b6b82" /><stop offset="0.45" stop-color="#b8c4d4" /><stop offset="1" stop-color="#4a5568" /></linearGradient>
+      <filter id="de-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+
+      <symbol id="de-ic-cad" viewBox="0 0 120 80">
+        <!-- xe khung lưới + màn hình -->
+        <rect x="74" y="2" width="42" height="30" rx="3" fill="#0b1626" stroke="#5b6b80" />
+        <rect x="77" y="5" width="36" height="24" rx="1.5" fill="#0c2a4a" />
+        <path d="M80 22 q4-7 12-7 q6 0 10 5 l7 1 v3 h-29z" fill="none" stroke="#38bdf8" stroke-width="1.2" />
+        <path d="M93 32 v6 M86 38 h14" stroke="#5b6b80" stroke-width="2" />
+        <path d="M6 64 l4-10 q14-14 34-14 q14 0 24 10 l14 3 q4 1 4 6 v5 h-80z" fill="none" stroke="#dbeafe" stroke-width="1.3" />
+        <path d="M18 50 v14 M30 44 v20 M42 41 v23 M54 42 v22 M66 48 v16 M78 54 v10 M8 58 h82" stroke="#93c5fd" stroke-opacity="0.55" stroke-width="0.7" />
+        <circle cx="24" cy="65" r="7" fill="#0b1626" stroke="#dbeafe" stroke-width="1.3" /><circle cx="70" cy="65" r="7" fill="#0b1626" stroke="#dbeafe" stroke-width="1.3" />
+        <rect x="80" y="70" width="34" height="5" rx="1" fill="#1f2937" stroke="#4b5563" stroke-width="0.6" />
+      </symbol>
+
+      <symbol id="de-ic-cae" viewBox="0 0 120 80">
+        <!-- 2 màn hình bản đồ nhiệt + chi tiết tô màu -->
+        <rect x="6" y="4" width="48" height="34" rx="3" fill="#0b1220" stroke="#4b5563" />
+        <ellipse cx="30" cy="21" rx="17" ry="11" fill="url(#de-heat)" />
+        <rect x="60" y="0" width="54" height="38" rx="3" fill="#0b1220" stroke="#4b5563" />
+        <rect x="64" y="4" width="46" height="30" fill="#1e3a8a" /><ellipse cx="88" cy="19" rx="16" ry="10" fill="url(#de-heat)" />
+        <path d="M12 72 l18-18 h80 l-18 18z" fill="#e5e7eb" fill-opacity="0.85" />
+        <path d="M30 66 q6-8 16-6 l20 1 q10-6 22-2 l8 5 q-6 6-16 5 h-36 q-8 4-14-3z" fill="url(#de-rain)" />
+      </symbol>
+
+      <symbol id="de-ic-ana" viewBox="0 0 120 80">
+        <!-- bảng điều khiển: biểu đồ đường + donut + đĩa dữ liệu -->
+        <rect x="4" y="6" width="56" height="40" rx="3" fill="#0b1220" stroke="#4b5563" />
+        <polyline points="10,38 18,30 26,34 34,20 42,26 52,14" fill="none" stroke="#f59e0b" stroke-width="1.6" />
+        <polyline points="10,40 20,36 30,38 40,30 52,32" fill="none" stroke="#3ed6e0" stroke-width="1.4" />
+        <rect x="64" y="2" width="52" height="40" rx="3" fill="#0b1220" stroke="#4b5563" />
+        <circle cx="80" cy="22" r="10" fill="none" stroke="#1f2937" stroke-width="5" />
+        <circle cx="80" cy="22" r="10" fill="none" stroke="#3ed6e0" stroke-width="5" stroke-dasharray="40 63" transform="rotate(-90 80 22)" />
+        <path d="M96 12 h14 M96 20 h10 M96 28 h14" stroke="#64748b" stroke-width="2" />
+        <ellipse cx="24" cy="66" rx="9" ry="4" fill="#f59e0b" /><ellipse cx="46" cy="64" rx="9" ry="4" fill="#94a3b8" /><ellipse cx="68" cy="66" rx="9" ry="4" fill="#14b8a6" /><ellipse cx="90" cy="64" rx="9" ry="4" fill="#475569" />
+      </symbol>
+
+      <symbol id="de-ic-wms" viewBox="0 0 120 80">
+        <!-- thùng hàng + bánh răng -->
+        <rect x="34" y="34" width="28" height="24" fill="url(#de-box)" stroke="#7c5a2c" stroke-width="0.8" />
+        <rect x="62" y="38" width="24" height="20" fill="url(#de-box)" stroke="#7c5a2c" stroke-width="0.8" />
+        <rect x="46" y="14" width="26" height="20" fill="url(#de-box)" stroke="#7c5a2c" stroke-width="0.8" />
+        <rect x="72" y="6" width="22" height="32" fill="url(#de-box)" stroke="#7c5a2c" stroke-width="0.8" />
+        <path d="M48 34 v24 M74 38 v20 M59 14 v20 M83 6 v32" stroke="#7c5a2c" stroke-width="0.8" />
+        <ellipse cx="100" cy="52" rx="7" ry="3" fill="#a3a3a3" /><rect x="93" y="40" width="14" height="12" fill="#8b8b8b" />
+        <path d={gear(26, 64, 9, 9)} fill="url(#de-steel)" /><circle cx="26" cy="64" r="3" fill="#1f2937" />
+        <path d={gear(42, 70, 6, 8)} fill="url(#de-steel)" />
+      </symbol>
+
+      <symbol id="de-ic-erp" viewBox="0 0 120 80">
+        <!-- tủ máy chủ -->
+        <rect x="14" y="26" width="22" height="42" rx="2" fill="url(#de-steel)" />
+        <rect x="44" y="8" width="24" height="60" rx="2" fill="url(#de-steel)" />
+        <rect x="76" y="18" width="22" height="50" rx="2" fill="url(#de-steel)" />
+        <g fill="#0f172a"><rect x="18" y="32" width="14" height="5" /><rect x="18" y="41" width="14" height="5" /><rect x="48" y="14" width="16" height="5" /><rect x="48" y="23" width="16" height="5" /><rect x="48" y="32" width="16" height="5" /><rect x="80" y="24" width="14" height="5" /><rect x="80" y="33" width="14" height="5" /></g>
+        <g fill="#3ed6e0"><circle cx="30" cy="34.5" r="1.2" /><circle cx="62" cy="16.5" r="1.2" /><circle cx="62" cy="25.5" r="1.2" /><circle cx="92" cy="26.5" r="1.2" /></g>
+        <g fill="#f59e0b"><circle cx="30" cy="43.5" r="1.2" /><circle cx="62" cy="34.5" r="1.2" /></g>
+        <rect x="104" y="44" width="10" height="24" rx="1" fill="#475569" />
+      </symbol>
+
+      <symbol id="de-ic-cmms" viewBox="0 0 120 80">
+        <!-- bánh răng + cờ lê -->
+        <path d={gear(40, 34, 22, 12)} fill="url(#de-steel)" /><circle cx="40" cy="34" r="8" fill="#1f2937" />
+        <path d={gear(76, 54, 14, 10)} fill="url(#de-steel)" /><circle cx="76" cy="54" r="5" fill="#1f2937" />
+        <path d="M86 10 l8 8 l-26 30 l-6-6z" fill="#cbd5e1" /><circle cx="92" cy="12" r="8" fill="none" stroke="#cbd5e1" stroke-width="4" stroke-dasharray="36 14" />
+        <rect x="58" y="42" width="8" height="18" rx="2" transform="rotate(42 62 51)" fill="#f97316" />
+      </symbol>
+
+      <symbol id="de-ic-his" viewBox="0 0 120 80">
+        <!-- cơ sở dữ liệu + đồng hồ -->
+        <path d="M22 14 v46 a22 7 0 0 0 44 0 v-46" fill="url(#de-db)" />
+        <ellipse cx="44" cy="14" rx="22" ry="7" fill="#d5dde8" />
+        <path d="M22 30 a22 7 0 0 0 44 0 M22 45 a22 7 0 0 0 44 0" fill="none" stroke="#334155" stroke-width="1.2" />
+        <circle cx="90" cy="44" r="18" fill="#e5e7eb" stroke="#64748b" stroke-width="3" />
+        <path d="M90 32 v12 l8 5" stroke="#1f2937" stroke-width="2" fill="none" stroke-linecap="round" />
+        <rect x="6" y="66" width="26" height="8" rx="2" fill="#475569" />
+      </symbol>
+
+      <symbol id="de-ic-bi" viewBox="0 0 120 80">
+        <!-- biểu đồ tròn + màn hình báo cáo -->
+        <g transform="translate(34 52)">
+          <path d="M0 0 L0 -20 A22 20 0 0 1 21 6 Z" fill="#3b82f6" />
+          <path d="M0 0 L21 6 A22 20 0 0 1 -10 18 Z" fill="#22c55e" />
+          <path d="M0 0 L-10 18 A22 20 0 0 1 -21 -5 Z" fill="#facc15" />
+          <path d="M0 0 L-21 -5 A22 20 0 0 1 0 -20 Z" fill="#ef4444" />
+        </g>
+        <rect x="64" y="4" width="50" height="32" rx="3" fill="#0b1220" stroke="#4b5563" />
+        <g fill="#3ed6e0"><rect x="70" y="24" width="6" height="8" /><rect x="80" y="18" width="6" height="14" /><rect x="90" y="12" width="6" height="20" /></g>
+        <rect x="100" y="16" width="6" height="16" fill="#ef4444" />
+        <rect x="70" y="44" width="40" height="26" rx="3" fill="#0b1220" stroke="#4b5563" />
+        <path d="M74 64 l8-8 6 4 10-12 8 4" fill="none" stroke="#f59e0b" stroke-width="1.6" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="container-x">
+    <div class="mx-auto max-w-4xl text-center">
+      <p class="font-mono text-xs uppercase tracking-[0.16em] text-cyan">Digital Engineering · CFD · Digital Twin</p>
+      <h2 id="digital-title" class="hd hd-ink mt-5 text-[2rem] text-ink-fg md:text-5xl">
+        {L('Kết nối mô phỏng CFD với', 'Connecting CFD simulation with')}
+        <span class="hd-hl">Digital Engineering</span>
+      </h2>
+      <p class="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-ink-muted md:text-lg">
+        {L('Nối liền mô phỏng dựa trên vật lý, dữ liệu vận hành và các quyết định kỹ thuật thông minh.', 'Bridging physics-based simulation, operational data, and intelligent engineering decisions.')}
+      </p>
+    </div>
+
+    <!-- phím gạt Trước / Sau CFD -->
+    <div class="mt-8 flex justify-center">
+      <div class="de-switch" role="group" aria-label={L('So sánh trước và sau giải pháp CFD', 'Compare before and after a CFD solution')}>
+        <span class="de-switch-thumb" aria-hidden="true" />
+        <button type="button" data-de-state="before" aria-pressed="true">{L('Trước CFD', 'Before CFD')}</button>
+        <button type="button" data-de-state="after" aria-pressed="false">{L('Sau CFD', 'After CFD')}</button>
+      </div>
+    </div>
+
+    <figure class="mt-8 md:mt-12">
+      <!-- ========== PC: bảng mạch 3D nhìn thẳng (CSS 3D — khối nổi, mô hình 3D trên khối) ========== -->
+      <div class="b3-scene hidden md:block" role="group" aria-label={L('Sơ đồ hệ sinh thái kỹ thuật số', 'Digital engineering ecosystem diagram')}>
+        <div class="b3-board">
+          <!-- độ dày tấm mạch -->
+          <div class="b3-slab b3-slab-s"></div><div class="b3-slab b3-slab-e"></div><div class="b3-slab b3-slab-w"></div>
+
+          <!-- linh kiện trang trí -->
+          {deco.map((d) => (
+            <i class="cu b3-deco" style={`--x:${d[0]}px;--y:${d[1]}px;--w:${d[2]}px;--d:${d[3]}px;--h:${d[4]}px`}><b class="t" /><b class="w" /><b class="e" /><b class="s" /></i>
+          ))}
+
+          <!-- đường mạch (nằm trên mặt bảng) -->
+          <svg class="b3-traces" viewBox="0 0 1200 760" aria-hidden="true">
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              {edges.map((e, i) => (
+                <g class:list={['de-edge', e.only && 'de-edge-new']} data-edge={i} style={`--cb:${e.c};--ca:${e.ca}`}>
+                  <path d={e.d} class="de-edge-glow" />
+                  <path d={e.d} class="de-edge-line" />
+                  <path d={e.d} class="de-edge-flow" />
+                </g>
+              ))}
+            </g>
+          </svg>
+
+          <!-- chip trung tâm -->
+          <i class="cu b3-chip" style="--x:556px;--y:336px;--w:88px;--d:88px;--h:18px">
+            <b class="t"><span class="b3-chip-core" /><span class="b3-chip-tag">CFD</span></b><b class="w" /><b class="e" /><b class="s" />
+          </i>
+
+          <!-- 8 khối, mỗi khối mang một mô hình 3D -->
+          {nodes.map((n) => (
+            <div class="b3-node" data-node={n.id} data-edges={linked(n.id)} data-name={n.name} data-desc={n.desc} style={`left:${n.x - 110}px;top:${n.y - 75}px`} tabindex="0" role="button" aria-label={`${n.label} — ${n.name}`}>
+              <span class="b3-pool" />
+              <i class="cu b3-tile" style="--x:0px;--y:0px;--w:220px;--d:150px;--h:34px">
+                <b class="t">
+                  {models[n.id].map((o) =>
+                    o.k === 'cu' ? (
+                      <i class:list={['cu', o.cls]} style={`--x:${o.x}px;--y:${o.y}px;--w:${o.w}px;--d:${o.d}px;--h:${o.h}px;--z:${o.z ?? 0}px;--top:${o.t};--front:${o.f};--side:${o.s}`}>
+                        <b class="t" /><b class="w" /><b class="e" /><b class="s" set:html={o.html ?? ''} />
+                      </i>
+                    ) : o.k === 'cy' ? (
+                      <i class="cy" style={`left:${o.x - o.r}px;top:${o.y - o.r}px;width:${o.r * 2}px;height:${o.r * 2}px;--z:${o.z ?? 0}px`}>
+                        {layers(Math.round(o.h / 1.5) + 1).map((i, _, arr) => {
+                          const last = i === arr.length - 1;
+                          const band = o.band && !last && (i === Math.round(arr.length / 3) || i === Math.round((2 * arr.length) / 3));
+                          return <b class:list={[o.dim && !last && 'dim']} style={`transform:translateZ(${(i * 1.5).toFixed(1)}px);background:${last ? o.top ?? o.c : band ? o.band : o.c}`} />;
+                        })}
+                      </i>
+                    ) : (
+                      <i class="ex" style={`left:${o.x}px;top:${o.y}px;width:${o.w}px;height:${o.h}px;--z:${o.z ?? 0}px`}>
+                        {layers(o.depth).map((i) => (
+                          <svg viewBox="0 0 100 100" style={`transform:translateZ(${i * 1.4}px);color:${i === o.depth - 1 ? o.front : o.back}`} set:html={i === o.depth - 1 && o.frontSvg ? o.frontSvg : o.svg} />
+                        ))}
+                      </i>
+                    ),
+                  )}
+                </b>
+                <b class="w" /><b class="e" />
+                <b class="s"><span class="b3-label">{n.label}</span></b>
+              </i>
+            </div>
+          ))}
+
+          <!-- biển điểm nghẽn / đã giải quyết: tấm 3D đứng -->
+          {[...alerts.map((a) => ({ ...a, phase: 'before' })), ...fixes.map((a) => ({ ...a, phase: 'after' }))].map((a) => (
+            <div class="b3-alert" data-phase={a.phase} data-alert={a.id} data-edges={a.links.map((id) => linked(id)).join(' ')} data-name={a.name} data-desc={a.desc} style={`left:${a.x}px;top:${a.y}px;--c:${a.c}`} tabindex="0" role="button" aria-label={a.name}>
+              <span class="b3-puddle" />
+              <i class="cu b3-sign" style="--x:-150px;--y:-8px;--w:300px;--d:12px;--h:84px;--z:10px">
+                <b class="t" /><b class="w" /><b class="e" /><b class="s">{a.lines.map((ln) => <span>{ln}</span>)}</b>
+              </i>
+              <i class="cu b3-leg" style="--x:-100px;--y:-4px;--w:6px;--d:5px;--h:10px"><b class="t" /><b class="w" /><b class="e" /><b class="s" /></i>
+              <i class="cu b3-leg" style="--x:94px;--y:-4px;--w:6px;--d:5px;--h:10px"><b class="t" /><b class="w" /><b class="e" /><b class="s" /></i>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- ========== Điện thoại: lưới 2 cột, chạm để sáng ========== -->
+      <div class="md:hidden">
+        <div class="grid grid-cols-2 gap-3">
+          {nodes.map((n) => (
+            <button type="button" class="de-tile" data-node={n.id} data-name={n.name} data-desc={n.desc}>
+              <svg viewBox="0 0 120 80" class="mx-auto h-16 w-24" aria-hidden="true"><use href={`#de-ic-${n.id}`} /></svg>
+              <span class="mt-2 block font-mono text-[0.68rem] font-bold uppercase leading-tight tracking-wide text-cyan">{n.label}</span>
+            </button>
+          ))}
+        </div>
+        <div class="mt-3 grid gap-2">
+          {[...alerts.map((a) => ({ ...a, phase: 'before' })), ...fixes.map((a) => ({ ...a, phase: 'after' }))].map((a) => (
+            <button type="button" class="de-pill" data-phase={a.phase} data-alert={a.id} data-name={a.name} data-desc={a.desc} style={`--c:${a.c}`}>{a.lines.join(' ')}</button>
+          ))}
+        </div>
+      </div>
+
+      <figcaption class="mt-6 text-center text-sm text-ink-muted">
+        {L('Hệ sinh thái kỹ thuật tích hợp — kết nối thiết kế, mô phỏng, dữ liệu vận hành và hệ thống doanh nghiệp.', 'An integrated engineering ecosystem connecting design, simulation, operational data, and business systems.')}
+      </figcaption>
+    </figure>
+
+    <ol class="mt-12 grid gap-8 md:mt-16 md:grid-cols-3 md:gap-8">
+      {points.map((p) => (
+        <li class="reveal">
+          <div class="flex items-center gap-3">
+            <span class="font-mono text-lg font-semibold text-cyan">{p.k}</span>
+            <span class="h-px flex-1 bg-gradient-to-r from-cyan/60 to-transparent" aria-hidden="true"></span>
+          </div>
+          <p class="mt-4 text-lg font-semibold text-white">{p.t}</p>
+          <p class="mt-2 text-sm leading-relaxed text-ink-muted">{p.d}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  /* ===== bảng mạch 3D nhìn thẳng ===== */
+  .b3-scene { position: relative; perspective: 2300px; perspective-origin: 50% 20%; --s: 1; height: calc(600px * var(--s)); margin-top: calc(-10px * var(--s)); }
+  .b3-board {
+    position: absolute; left: 50%; top: 50%;
+    width: 1200px; height: 760px;
+    transform-style: preserve-3d;
+    transform: translate(-50%, -52%) scale(var(--s)) rotateX(52deg);
+    border-radius: 20px;
+    background:
+      linear-gradient(#1a212b 1px, transparent 1px) 0 0 / 50px 50px,
+      linear-gradient(90deg, #1a212b 1px, transparent 1px) 0 0 / 50px 50px,
+      radial-gradient(80% 70% at 50% 50%, #121822, #0a0e14);
+    box-shadow: 0 0 0 1px #232c38, 0 0 140px -20px rgb(62 214 224 / 0.25);
+  }
+  .b3-slab { position: absolute; }
+  .b3-slab-s { left: 0; bottom: 0; width: 100%; height: 30px; transform-origin: bottom; transform: rotateX(90deg); background: linear-gradient(#141a22, #050608); border-radius: 0 0 8px 8px; }
+  .b3-slab-e { top: 0; right: 0; width: 30px; height: 100%; transform-origin: right; transform: rotateY(-90deg); background: linear-gradient(90deg, #0c1016, #050608); }
+  .b3-slab-w { top: 0; left: 0; width: 30px; height: 100%; transform-origin: left; transform: rotateY(90deg); background: linear-gradient(-90deg, #0c1016, #050608); }
+  .b3-traces { position: absolute; inset: 0; width: 100%; height: 100%; transform: translateZ(1px); overflow: visible; }
+
+  /* ---- khối hộp 3D dùng chung (mặt trên, trước, hai bên) ---- */
+  .cu { position: absolute; display: block; left: var(--x); top: var(--y); width: var(--w); height: var(--d); transform-style: preserve-3d; transform: translateZ(var(--z, 0px)); }
+  .cu > b { position: absolute; display: block; }
+  .cu > .t { inset: 0; transform: translateZ(var(--h)); transform-style: preserve-3d; background: var(--top, #2a323e); }
+  .cu > .s { left: 0; bottom: 0; width: 100%; height: var(--h); transform-origin: bottom; transform: rotateX(-90deg); background: var(--front, #10151c); }
+  .cu > .e { top: 0; right: 0; width: var(--h); height: 100%; transform-origin: right; transform: rotateY(90deg); background: var(--side, #161c25); }
+  .cu > .w { top: 0; left: 0; width: var(--h); height: 100%; transform-origin: left; transform: rotateY(-90deg); background: var(--side, #161c25); }
+  .b3-deco { --top: linear-gradient(135deg, #1d2430, #11161d); --front: #0a0d12; --side: #0e1218; }
+  /* trụ: xếp đĩa */
+  .cy { position: absolute; display: block; transform-style: preserve-3d; transform: translateZ(var(--z, 0px)); }
+  .cy > b { position: absolute; inset: 0; border-radius: 50%; }
+  .cy > b.dim { filter: brightness(0.55); }
+  /* hình đứng đùn khối */
+  .ex { position: absolute; display: block; transform-style: preserve-3d; transform-origin: 50% 100%; transform: translateZ(var(--z, 0px)) rotateX(-90deg); }
+  .ex > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  /* màn hình: viền + kính */
+  .mon > .s { box-shadow: inset 0 0 0 1px #374151; }
+  /* xe khung lưới */
+  .wire > b { background: rgb(56 189 248 / 0.1) repeating-linear-gradient(90deg, rgb(186 230 253 / 0.45) 0 1px, transparent 1px 10px); box-shadow: inset 0 0 0 1px rgb(224 242 254 / 0.85); }
+  .wire > .t { background: rgb(56 189 248 / 0.12) repeating-linear-gradient(90deg, rgb(186 230 253 / 0.45) 0 1px, transparent 1px 10px), repeating-linear-gradient(rgb(186 230 253 / 0.45) 0 1px, transparent 1px 10px); }
+  /* đèn tủ máy chủ */
+  .srv > .s::after { content: ''; position: absolute; right: 5px; top: 6px; width: 4px; height: calc(100% - 12px); background: radial-gradient(circle, #3ed6e0 1.5px, transparent 2px) 0 0 / 4px 9px; }
+  .srv > .s::before { content: ''; position: absolute; right: 11px; top: 6px; width: 4px; height: 30%; background: radial-gradient(circle, #f59e0b 1.5px, transparent 2px) 0 0 / 4px 9px; }
+
+  /* chip */
+  .b3-chip { --top: #151a22; --front: #0d1117; --side: #11151b; }
+  .b3-chip > .t { box-shadow: inset 0 0 0 1px #3a4554, inset 0 0 0 16px #11151b, inset 0 0 0 17px #2a3340; }
+  .b3-chip-core { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: #3ed6e0; box-shadow: 0 0 14px 4px rgb(62 214 224 / 0.8); animation: de-pulse 2.4s ease-in-out infinite; }
+  .b3-chip-tag { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) translateZ(20px) rotateX(-52deg) scale(0.6); font: 800 20px var(--font-sans); letter-spacing: 0.14em; color: #e6feff; text-shadow: 0 0 12px #3ed6e0; opacity: 0; transition: opacity 0.5s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  [data-state='after'] .b3-chip-tag { opacity: 1; transform: translate(-50%, -50%) translateZ(20px) rotateX(-52deg) translateY(-34px) scale(1); }
+  [data-state='after'] .b3-chip > .t { box-shadow: inset 0 0 0 2px #3ed6e0, inset 0 0 0 16px #11151b, 0 0 40px rgb(62 214 224 / 0.7); }
+  [data-state='after'] .b3-chip-core { width: 24px; height: 24px; margin: -12px; box-shadow: 0 0 26px 10px rgb(62 214 224 / 0.85); }
+
+  /* ---- khối hệ thống ---- */
+  .b3-node { position: absolute; width: 220px; height: 150px; transform-style: preserve-3d; cursor: pointer; outline: none; }
+  .b3-tile { transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); --top: linear-gradient(160deg, #2c3541 0%, #1a2029 60%, #141920 100%); --front: linear-gradient(#1a212b, #0b0e13); --side: linear-gradient(90deg, #141a22, #0b0e13); }
+  .b3-tile > .t { border-radius: 10px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.09), inset 0 0 0 9px rgb(0 0 0 / 0.14), inset 0 0 0 10px rgb(255 255 255 / 0.04); transition: box-shadow 0.35s; }
+  .b3-tile > .s, .b3-tile > .e, .b3-tile > .w { transition: background 0.35s; }
+  .b3-label {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-sans); font-size: 15px; font-weight: 800; letter-spacing: 0.08em;
+    color: #8ff3f8; text-shadow: 0 0 8px rgb(62 214 224 / 0.75), 0 0 2px rgb(62 214 224 / 0.9);
+    transition: color 0.3s, text-shadow 0.3s;
+  }
+  .b3-pool { position: absolute; inset: -34px; border-radius: 44px; background: radial-gradient(closest-side, rgb(62 214 224 / 0.55), transparent); transform: translateZ(1.5px); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+  .b3-node.active .b3-tile { transform: translateZ(24px); }
+  .b3-node.active .b3-pool { opacity: 1; }
+  .b3-node.active .b3-tile > .t { box-shadow: inset 0 0 0 2px #3ed6e0, inset 0 0 30px rgb(62 214 224 / 0.3), 0 0 36px rgb(62 214 224 / 0.55); }
+  .b3-node.active .b3-tile > .s { background: linear-gradient(#1d5660, #071114); }
+  .b3-node.active .b3-tile > .e, .b3-node.active .b3-tile > .w { background: linear-gradient(90deg, #1f5961, #0a1a1d); }
+  .b3-node.active .b3-label { color: #f0feff; text-shadow: 0 0 14px #3ed6e0, 0 0 3px #3ed6e0; }
+  .b3-node:focus-visible .b3-tile > .t { box-shadow: inset 0 0 0 2px #3ed6e0; }
+  [data-state='after'] .b3-tile > .t { box-shadow: inset 0 0 0 1px rgb(62 214 224 / 0.5), inset 0 0 0 9px rgb(0 0 0 / 0.14), 0 0 20px rgb(62 214 224 / 0.18); }
+
+  /* ---- biển 3D: điểm nghẽn / đã giải quyết ---- */
+  .b3-alert { position: absolute; width: 0; height: 0; transform-style: preserve-3d; cursor: pointer; outline: none; transition: opacity 0.45s; }
+  [data-state='before'] [data-phase='after'], [data-state='after'] [data-phase='before'] { opacity: 0; pointer-events: none; }
+  .b3-puddle { position: absolute; left: -160px; top: -50px; width: 320px; height: 100px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 45%, transparent), transparent); transform: translateZ(1.5px); opacity: 0.75; transition: opacity 0.3s; }
+  .b3-sign { --top: color-mix(in srgb, var(--c) 35%, #0d1117); --side: color-mix(in srgb, var(--c) 30%, #07090d); transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  .b3-sign > .s {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 6px; border: 2.5px solid var(--c);
+    background: color-mix(in srgb, var(--c) 22%, #0d1117);
+    color: color-mix(in srgb, var(--c) 40%, #fff);
+    font-family: var(--font-sans); font-size: 16px; font-weight: 700; line-height: 1.3; text-align: center;
+    box-shadow: 0 0 20px var(--c), inset 0 0 14px color-mix(in srgb, var(--c) 40%, transparent);
+    text-shadow: 0 0 8px var(--c);
+    animation: de-sign 2.8s ease-in-out infinite;
+  }
+  .b3-leg { --top: #3a4554; --front: #2a3340; --side: #1f2630; }
+  @keyframes de-sign { 50% { box-shadow: 0 0 8px var(--c), inset 0 0 6px color-mix(in srgb, var(--c) 30%, transparent); } }
+  .b3-alert.active .b3-sign { transform: translateZ(18px); }
+  .b3-alert.active .b3-sign > .s { animation: none; box-shadow: 0 0 38px var(--c), inset 0 0 18px color-mix(in srgb, var(--c) 50%, transparent); }
+  .b3-alert.active .b3-puddle { opacity: 1; }
+  .de-pill[data-phase] { transition: opacity 0.3s; }
+  [data-state='before'] .de-pill[data-phase='after'], [data-state='after'] .de-pill[data-phase='before'] { display: none; }
+
+  /* phím gạt Trước / Sau */
+  .de-switch { position: relative; display: inline-flex; padding: 4px; border-radius: 999px; background: #f4f6f8; box-shadow: 0 8px 30px -10px rgb(62 214 224 / 0.45); }
+  .de-switch button { position: relative; z-index: 1; min-width: 7.5rem; padding: 0.6rem 1.3rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600; color: #0f172a; transition: color 0.35s; }
+  .de-switch button[aria-pressed='true'] { color: #fff; }
+  .de-switch-thumb { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 999px; background: #070b14; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  [data-state='after'] .de-switch-thumb { transform: translateX(100%); }
+  .de-switch button:focus-visible { outline: 2px solid #3ed6e0; outline-offset: 2px; }
+
+  /* đường mạch */
+  .de-edge { --c: var(--cb); }
+  [data-state='after'] .de-edge { --c: var(--ca); }
+  .de-edge path { transition: stroke 0.6s, opacity 0.3s, stroke-width 0.3s; }
+  .de-edge-line { stroke: var(--c); stroke-width: 3; opacity: 0.85; transition: opacity 0.3s, stroke-width 0.3s; }
+  .de-edge-glow { stroke: var(--c); stroke-width: 12; opacity: 0.28; filter: blur(4px); transition: opacity 0.3s; }
+  .de-edge-flow { stroke: #fff; stroke-width: 2; stroke-dasharray: 4 26; opacity: 0; animation: de-flow 1.4s linear infinite; transition: opacity 0.3s; }
+  @keyframes de-flow { to { stroke-dashoffset: -30; } }
+  .de-edge.on .de-edge-line { opacity: 1; stroke-width: 4; }
+  .de-edge.on .de-edge-glow { opacity: 0.75; }
+  .de-edge.on .de-edge-flow { opacity: 0.85; }
+  [data-de].has-active .de-edge:not(.on) { opacity: 0.35; }
+  /* sau CFD: dòng dữ liệu chạy trên mọi đường */
+  [data-state='after'] .de-edge-flow { opacity: 0.55; animation-duration: 1s; }
+  /* đường mới chỉ có sau CFD: vẽ dần ra */
+  .de-edge-new .de-edge-line, .de-edge-new .de-edge-glow { stroke-dasharray: 1000; stroke-dashoffset: 1000; transition: stroke-dashoffset 1.4s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.3s; }
+  .de-edge-new .de-edge-flow { display: none; }
+  [data-state='after'] .de-edge-new .de-edge-line, [data-state='after'] .de-edge-new .de-edge-glow { stroke-dashoffset: 0; }
+  [data-state='after'] .de-edge-new .de-edge-flow { display: inline; }
+
+  @keyframes de-pulse { 50% { opacity: 0.35; } }
+
+  /* điện thoại */
+  .de-tile {
+    border-radius: 0.9rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: linear-gradient(180deg, #1c222c, #10141a);
+    padding: 0.9rem 0.5rem 0.8rem;
+    text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  }
+  .de-tile.active { border-color: #3ed6e0; box-shadow: 0 0 22px -4px rgb(62 214 224 / 0.7); transform: translateY(-2px); }
+  .de-pill {
+    border-radius: 0.6rem;
+    border: 1.5px solid var(--c);
+    background: color-mix(in srgb, var(--c) 14%, #0d1117);
+    padding: 0.55rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--c) 55%, #fff);
+    box-shadow: 0 0 14px -6px var(--c);
+  }
+  .de-pill.active { box-shadow: 0 0 22px -2px var(--c); }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-de]').forEach((root) => {
+    const edges = [...root.querySelectorAll<SVGGElement>('[data-edge]')];
+    const items = [...root.querySelectorAll<HTMLElement | SVGGElement>('[data-node], [data-alert]')];
+    const state = () => (root.dataset.state === 'after' ? 'after' : 'before');
+    let pinned: Element | null = null;
+
+    // co bảng mạch 3D cho vừa bề rộng khung
+    const scene = root.querySelector<HTMLElement>('.b3-scene');
+    if (scene) new ResizeObserver(() => scene.style.setProperty('--s', String(Math.min(1, scene.clientWidth / 1240)))).observe(scene);
+
+    const show = (el: Element | null) => {
+      items.forEach((it) => it.classList.toggle('active', it === el));
+      const on = new Set((el?.getAttribute('data-edges') ?? '').split(' ').filter(Boolean));
+      edges.forEach((e) => e.classList.toggle('on', on.has(e.dataset.edge!)));
+      root.classList.toggle('has-active', !!el);
+    };
+
+    // phím gạt Trước / Sau CFD
+    root.querySelectorAll<HTMLButtonElement>('[data-de-state]').forEach((b) => b.addEventListener('click', () => {
+      root.dataset.state = b.dataset.deState!;
+      root.querySelectorAll('[data-de-state]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      if (pinned?.getAttribute('data-phase') && pinned.getAttribute('data-phase') !== state()) pinned = null;
+      show(pinned);
+    }));
+
+    items.forEach((it) => {
+      it.addEventListener('mouseenter', () => show(it));
+      it.addEventListener('mouseleave', () => show(pinned));
+      it.addEventListener('focus', () => show(it));
+      it.addEventListener('blur', () => show(pinned));
+      // chạm / bấm: giữ trạng thái sáng (bấm lần nữa để bỏ)
+      it.addEventListener('click', () => { pinned = pinned === it ? null : it; show(pinned); });
+      // khối SVG không phải nút thật → tự xử lý Enter/Space (nút HTML trên điện thoại đã có sẵn)
+      if (it instanceof SVGElement) it.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); it.dispatchEvent(new MouseEvent('click')); } });
+    });
+  });
+</script>

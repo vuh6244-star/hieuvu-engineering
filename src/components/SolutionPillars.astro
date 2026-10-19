@@ -1,0 +1,115 @@
+---
+/*
+  "4 điểm thất bại của dự án CFD" — khối thẻ ảnh nền tối (trang chủ, ngay dưới hero).
+  Ảnh nền do chủ dự án cung cấp (src/assets/solutions/).
+*/
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import { localize, type Lang } from '@/i18n/ui';
+import mesh from '@/assets/solutions/mesh.webp';
+import physics from '@/assets/solutions/physics.webp';
+import verify from '@/assets/solutions/verify.webp';
+import decision from '@/assets/solutions/decision.webp';
+
+interface Props { lang: Lang; as?: 'h1' | 'h2'; /** true khi khối nằm đầu trang (chừa chỗ cho header cố định) */ top?: boolean }
+const { lang, as: Tag = 'h2', top = false } = Astro.props;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+
+const pillars = [
+  {
+    img: mesh,
+    title: L('Hình học & lưới', 'Geometry & mesh'),
+    tags: L('Làm sạch CAD, lưới polyhedral/trimmed, lớp prism', 'CAD clean-up, polyhedral/trimmed mesh, prism layers'),
+    points: [
+      L('Từ CAD thô, nhiều lỗi đến hình học kín, sẵn sàng chia lưới', 'From raw, broken CAD to watertight, mesh-ready geometry'),
+      L('Lớp prism kiểm soát y+ đúng với mô hình tường', 'Prism layers sized for the right y+ and wall treatment'),
+      L('Độc lập lưới được chứng minh, không phỏng đoán', 'Mesh independence demonstrated, not assumed'),
+    ],
+    href: localize('/blog/polyhedral-vs-trimmed-mesh', lang),
+  },
+  {
+    img: physics,
+    title: L('Mô hình vật lý', 'Physics modelling'),
+    tags: L('Rối, đốt cháy, đa pha, truyền nhiệt liên hợp', 'Turbulence, combustion, multiphase, CHT'),
+    points: [
+      L('Chọn đúng mô hình rối và điều kiện biên cho từng bài toán', 'The right turbulence model and boundary conditions for each case'),
+      L('Đốt cháy, bức xạ, đa pha VOF/Euler, CHT', 'Combustion, radiation, VOF/Eulerian multiphase, CHT'),
+      L('Thông số vận hành thực tế thay vì giả định lý tưởng', 'Real operating data instead of idealised assumptions'),
+    ],
+    href: localize('/projects', lang),
+  },
+  {
+    img: verify,
+    title: L('Kiểm chứng & độ tin cậy', 'Verification & trust'),
+    tags: L('Hội tụ, V&V, đối chiếu thực nghiệm', 'Convergence, V&V, validation against data'),
+    points: [
+      L('Theo dõi hội tụ bằng đại lượng kỹ thuật, không chỉ residual', 'Convergence judged on engineering quantities, not residuals alone'),
+      L('Đối chiếu số đo vận hành hoặc dữ liệu thiết kế', 'Checked against plant measurements or design data'),
+      L('Báo cáo rõ sai số và giới hạn của mô hình', 'Errors and model limits reported openly'),
+    ],
+    href: localize('/blog/cfd-convergence-checklist', lang),
+  },
+  {
+    img: decision,
+    title: L('Từ dữ liệu đến quyết định', 'From data to decisions'),
+    tags: L('So sánh phương án, tối ưu, báo cáo', 'Design comparison, optimisation, reporting'),
+    points: [
+      L('Kết quả định lượng: tổn thất áp, hiệu suất, nhiệt độ, phát thải', 'Quantified results: pressure drop, efficiency, temperature, emissions'),
+      L('So sánh nhiều phương án thiết kế trên cùng một chuẩn', 'Design variants compared on the same baseline'),
+      L('Khuyến nghị cụ thể, hình ảnh trực quan cho người ra quyết định', 'Clear recommendations and visuals for decision-makers'),
+    ],
+    href: localize('/projects', lang),
+  },
+];
+---
+
+<section class:list={['motion-ok bg-ink pb-16 text-ink-fg md:pb-24', top ? 'pt-28 md:pt-40' : 'pt-16 md:pt-24']} aria-labelledby="pillars-title">
+  <div class="container-x">
+    <Tag id="pillars-title" class="hd hd-ink mx-auto max-w-5xl text-center text-[2rem] text-ink-fg md:text-5xl">
+      {L('Các điểm nghẽn thường gặp trong các dự án', 'Common bottlenecks in')}{' '}
+      <span class="hd-hl">{L('mô phỏng CFD công nghiệp', 'industrial CFD simulation projects')}</span>
+    </Tag>
+
+    <ul class="mt-12 grid gap-4 md:mt-16 md:grid-cols-2 md:gap-6">
+      {
+        pillars.map((p, i) => (
+          <li class="reveal" style={`transition-delay:${(i % 2) * 80}ms`}>
+            <a href={p.href} class="pillar group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-2 transition-colors hover:border-cyan/50 md:min-h-[24rem] md:justify-end lg:min-h-[26rem]">
+              <!-- Điện thoại: ảnh là dải trên cùng, chữ bên dưới · PC: ảnh phủ cả thẻ, chữ đè bên trái -->
+              <div class="relative aspect-[16/9] overflow-hidden md:absolute md:inset-0 md:aspect-auto">
+                <Image src={p.img} alt="" widths={[640, 960, 1600]} sizes="(min-width: 768px) 50vw, 100vw" class="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
+                <div class="pillar-shade absolute inset-0" aria-hidden="true" />
+              </div>
+              <div class="relative p-6 pt-4 md:p-8">
+                <span class="font-mono text-base font-semibold text-cyan">0{i + 1}</span>
+                <h3 class="mt-2 text-2xl font-semibold tracking-tight text-white md:text-[1.7rem]">{p.title}</h3>
+                <p class="mt-1.5 text-sm font-semibold text-ink-fg/90">{p.tags}</p>
+                <ul class="mt-5 space-y-2 text-sm text-ink-fg/85">
+                  {p.points.map((pt) => (
+                    <li class="flex gap-2.5"><span class="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white" aria-hidden="true" />{pt}</li>
+                  ))}
+                </ul>
+                <span class="mt-6 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-white">
+                  {L('Xem thêm', 'Learn more')} <Icon name="arrow-right" size={14} class="transition-transform group-hover:translate-x-1" />
+                </span>
+              </div>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  /* Tối dần từ trái/dưới để chữ luôn đọc rõ trên ảnh mô phỏng */
+  .pillar-shade {
+    background:
+      linear-gradient(90deg, rgb(3 6 13 / 0.88) 0%, rgb(3 6 13 / 0.55) 40%, rgb(3 6 13 / 0.05) 72%, rgb(3 6 13 / 0) 100%),
+      linear-gradient(0deg, rgb(3 6 13 / 0.75) 0%, rgb(3 6 13 / 0) 55%);
+  }
+  @media (max-width: 767px) {
+    /* chỉ hòa mép dưới ảnh vào nền thẻ */
+    .pillar-shade { background: linear-gradient(0deg, var(--color-ink-2, #0b1220) 0%, transparent 35%); }
+  }
+</style>

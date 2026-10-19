@@ -51,7 +51,7 @@ self.onmessage = (e: MessageEvent) => {
       gen = m.gen;
       const def = scenes[m.scene];
       sim = new LBM(m.Nx, m.Ny);
-      const geo = def.geometry(m.Nx, m.Ny, m.mobile);
+      const geo = def.geometry(m.Nx, m.Ny, m.mobile, m.my);
       sim.init(def, geo.shapes, geo.groundY ?? 0);
       sim.source = geo.source ?? null;
       sim.sink = geo.sink ?? null;

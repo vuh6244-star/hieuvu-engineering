@@ -1,5 +1,5 @@
 ---
-/* Nút YouTube & LinkedIn nổi ở góc phải dưới (phía trên nút trò chuyện) */
+/* Nút YouTube & LinkedIn nổi ở góc phải dưới (phía trên nút trò chuyện) — chỉ hiện trên PC; điện thoại đã có ở menu & chân trang */
 import { socials } from '@/data/site';
 import type { Lang } from '@/i18n/ui';
 
@@ -14,7 +14,7 @@ const items = [
 ];
 ---
 
-<ul class="fixed bottom-[5.75rem] right-[1.625rem] z-40 flex flex-col gap-2.5 md:right-[1.875rem]" aria-label={L('Mạng xã hội', 'Social links')}>
+<ul class="fixed bottom-[5.75rem] right-[1.625rem] z-40 hidden flex-col md:flex gap-2.5 md:right-[1.875rem]" aria-label={L('Mạng xã hội', 'Social links')}>
   {
     items.map((s) => (
       <li>

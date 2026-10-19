@@ -61,7 +61,6 @@ Website chạy **Node.js** (form liên hệ & newsletter là API phía server), 
 **Chức năng**
 - [ ] Gửi thử form liên hệ (VI & EN) → nhận email tại `hieuvu.sim@gmail.com`, bấm *Reply* trả lời đúng người gửi
 - [ ] Đăng ký newsletter → nhận email thông báo
-- [ ] Nút Tải CV mở đúng file thật
 - [ ] Link Zalo, LinkedIn, YouTube, Facebook, TikTok đúng
 - [ ] Chuyển ngôn ngữ VI ↔ EN ở mọi trang; chuyển sáng/tối
 - [ ] Trang 404: truy cập `/khong-ton-tai`

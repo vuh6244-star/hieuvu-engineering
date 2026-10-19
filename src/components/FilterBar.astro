@@ -10,7 +10,7 @@ const { label, allLabel, options, target } = Astro.props;
 const total = options.reduce((s, o) => s + o.count, 0);
 ---
 
-<div class="reveal flex flex-wrap items-center gap-2" role="group" aria-label={label} data-filter-bar data-target={target}>
+<div class="reveal -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0 [&>*]:shrink-0" role="group" aria-label={label} data-filter-bar data-target={target}>
   <button type="button" class="filter-btn" aria-pressed="true" data-filter="all">{allLabel} <span class="font-mono text-xs opacity-60">{total}</span></button>
   {
     options.filter((o) => o.count > 0).map((o) => (

@@ -23,7 +23,8 @@ export default defineConfig({
     mdx(),
     sitemap({
       i18n: { defaultLocale: 'vi', locales: { vi: 'vi-VN', en: 'en-US' } },
-      filter: (page) => !page.includes('/api/') && !page.endsWith('/404/'),
+      // /solutions, /exercises: trang khung chưa có nội dung (noindex) — bỏ khỏi sitemap tới khi hoàn thiện
+      filter: (page) => !page.includes('/api/') && !page.endsWith('/404/') && !/\/(solutions|exercises)\/$/.test(page),
     }),
   ],
   prefetch: { prefetchAll: false, defaultStrategy: 'hover' },

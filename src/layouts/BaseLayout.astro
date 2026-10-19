@@ -13,6 +13,8 @@ import { site, socials } from '@/data/site';
 type Props = Omit<SEOProps, 'alternates'> & {
   /** Ghi đè đường dẫn bản dịch (ví dụ: bài viết chưa có bản tiếng Anh) */
   alternates?: SEOProps['alternates'];
+  /** Luôn dùng giao diện tối, bỏ qua lựa chọn sáng/tối (trang chủ — thống nhất nền tối từ đầu đến cuối) */
+  forceDark?: boolean;
 };
 
 const props = Astro.props as Props;
@@ -39,7 +41,7 @@ const extraLd = props.jsonLd ? (Array.isArray(props.jsonLd) ? props.jsonLd : [pr
 ---
 
 <!doctype html>
-<html lang={lang} data-theme="dark" class="no-js">
+<html lang={lang} data-theme="dark" class="no-js" data-force-dark={props.forceDark ? '' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -53,6 +55,7 @@ const extraLd = props.jsonLd ? (Array.isArray(props.jsonLd) ? props.jsonLd : [pr
         var t;
         try { t = localStorage.getItem('theme'); } catch (e) {}
         if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        if (d.hasAttribute('data-force-dark')) t = 'dark';
         d.dataset.theme = t;
         var m = document.querySelector('meta[name="theme-color"]');
         if (m) m.setAttribute('content', t === 'dark' ? '#070b14' : '#f8fafc');

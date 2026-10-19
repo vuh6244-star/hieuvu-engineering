@@ -1,0 +1,48 @@
+---
+/* Dải kênh nội dung (trang chủ, ngay dưới hero): YouTube · LinkedIn · TikTok — logo màu thương hiệu từng kênh */
+import { socials } from '@/data/site';
+import { brandLogos } from '@/lib/brandLogos';
+import type { Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const href = (id: string) => socials.find((s) => s.id === id)!.href;
+
+const channels = [
+  {
+    id: 'youtube', name: 'YouTube', desc: L('Tutorial, các chia sẻ, tự học', 'Tutorials, insights, self-study'),
+  },
+  {
+    id: 'linkedin', name: 'LinkedIn', desc: L('Chia sẻ xu hướng, cập nhật trong ngành', 'Industry trends and updates'),
+  },
+  {
+    id: 'tiktok', name: 'TikTok', desc: L('Cho các show case nhanh', 'Quick showcases'),
+  },
+];
+---
+
+<section class="container-x py-8 md:py-10" aria-label={L('Kênh nội dung', 'Content channels')}>
+  <ul class="grid grid-cols-3 divide-x divide-line">
+    {
+      channels.map((c) => (
+        <li class="px-3 first:pl-0 last:pr-0 sm:px-6 md:px-10">
+          <a href={href(c.id)} target="_blank" rel="noopener" class="ch-link group block md:mx-auto md:w-fit">
+            <span class="flex items-center gap-2 md:gap-2.5">
+              <svg viewBox="0 0 24 24" class="h-6 w-6 shrink-0 text-fg transition-transform duration-300 group-hover:scale-110 md:h-8 md:w-8" aria-hidden="true" set:html={brandLogos[c.id]} />
+              <span class="font-display text-base font-bold tracking-tight text-fg sm:text-lg md:text-2xl">{c.name}</span>
+            </span>
+            <span class="mt-1.5 block text-xs leading-snug text-muted sm:text-sm md:mt-2 md:text-base">{c.desc}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .ch-link { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ch-link:hover { transform: translateY(-2px); }
+  .ch-link:hover .font-display { color: var(--accent); }
+  .ch-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+</style>

@@ -14,9 +14,10 @@ const current = stripLang(Astro.url.pathname).replace(/\/$/, '') || '/';
 
 const links = [
   { href: '/', label: t('nav.home') },
-  { href: '/about', label: t('nav.about') },
-  { href: '/projects', label: t('nav.projects') },
+  { href: '/solutions', label: t('nav.solutions') },
   { href: '/blog', label: t('nav.blog') },
+  { href: '/exercises', label: t('nav.exercises') },
+  { href: '/projects', label: t('nav.projects') },
   { href: '/contact', label: t('nav.contact') },
 ];
 const isActive = (href: string) => (href === '/' ? current === '/' : current.startsWith(href));
@@ -35,7 +36,7 @@ const otherLang = lang === 'vi' ? 'en' : 'vi';
   >
     <a href={localize('/', lang)} class="flex shrink-0 items-center gap-2.5" aria-label="Hiếu Vũ Engineering — home">
       <Logo height={26} />
-      <span class="hidden font-display text-[0.95rem] font-semibold tracking-tight sm:inline">
+      <span class="hidden font-display text-[0.95rem] font-semibold tracking-tight sm:inline lg:hidden xl:inline">
         Hiếu Vũ <span class="text-muted">| Engineering</span>
       </span>
     </a>
@@ -48,12 +49,12 @@ const otherLang = lang === 'vi' ? 'en' : 'vi';
               href={localize(l.href, lang)}
               aria-current={isActive(l.href) ? 'page' : undefined}
               class:list={[
-                'relative whitespace-nowrap rounded-full px-3.5 py-2 text-[0.9rem] font-medium transition-colors',
+                'relative whitespace-nowrap rounded-full px-3 py-2 text-[0.9rem] font-medium transition-colors xl:px-3.5',
                 isActive(l.href) ? 'text-fg' : 'text-muted hover:text-fg',
               ]}
             >
               {l.label}
-              {isActive(l.href) && <span class="absolute inset-x-3.5 -bottom-0.5 h-px bg-accent-bright" aria-hidden="true" />}
+              {isActive(l.href) && <span class="absolute inset-x-3 -bottom-0.5 h-px bg-accent-bright xl:inset-x-3.5" aria-hidden="true" />}
             </a>
           </li>
         ))
@@ -122,7 +123,7 @@ const otherLang = lang === 'vi' ? 'en' : 'vi';
               ]}
             >
               <span>
-                <span class="mr-3 font-mono text-xs text-muted">0{i + 1}</span>
+                <span class="mr-3 font-mono text-sm text-muted">0{i + 1}</span>
                 {l.label}
               </span>
               <Icon name="arrow-right" size={18} class="text-muted" />

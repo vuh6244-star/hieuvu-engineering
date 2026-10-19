@@ -16,8 +16,8 @@ const ink = tone === 'ink';
 
 <div class:list={['reveal max-w-3xl', align === 'center' && 'mx-auto text-center']}>
   {eyebrow && <p class:list={['eyebrow', ink && '!text-cyan', align === 'center' && 'justify-center']}>{eyebrow}</p>}
-  <Tag id={id} class:list={['mt-4 text-[2rem] font-light leading-[1.1] md:text-5xl', ink ? 'text-ink-fg' : 'text-fg']}>
-    {title}{strong && <> <span class="font-bold">{strong}</span></>}
+  <Tag id={id} class:list={['hd mt-4 text-[2rem] md:text-5xl', ink ? 'hd-ink text-ink-fg' : 'text-fg']}>
+    {title}{strong && <> <span class="hd-hl">{strong}</span></>}
   </Tag>
   {desc && <p class:list={['mt-5 text-lg', ink ? 'text-ink-muted' : 'text-muted', align === 'center' && 'mx-auto max-w-2xl']}>{desc}</p>}
   <slot />

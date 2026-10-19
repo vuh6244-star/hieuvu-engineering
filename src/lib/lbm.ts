@@ -85,48 +85,50 @@ export type SceneDef = {
   ground?: boolean;
   /** Hệ số thang màu vận tốc (mặc định 1.6 × u0) */
   speedScale?: number;
-  geometry(Nx: number, Ny: number, mobile: boolean): { shapes: Shape[]; L: number; source?: Source; sink?: Sink; groundY?: number };
+  /** my: tâm dọc (tỉ lệ 0–1) của dải mô phỏng trên điện thoại — dải trống bên dưới phần chữ hero */
+  geometry(Nx: number, Ny: number, mobile: boolean, my: number): { shapes: Shape[]; L: number; source?: Source; sink?: Sink; groundY?: number };
 };
 
 export const scenes: SceneDef[] = [
   {
     title: { vi: 'Dãy xoáy Kármán sau trụ tròn', en: 'Kármán vortex street' },
     field: 'vort', unit: 'ω·D/U∞', labels: ['−', '0', '+'], u0: 0.1, nu: 0.016, inlet: 'uniform',
-    geometry(Nx, Ny, m) {
+    geometry(Nx, Ny, m, my) {
       const r = Math.max(6, Math.round((m ? Nx : Ny) * 0.075));
-      return { shapes: [{ kind: 'circle', x: Math.round(Nx * (m ? 0.3 : 0.69)), y: Math.round(Ny * (m ? 0.74 : 0.5)) + 0.5, r }], L: 2 * r };
+      return { shapes: [{ kind: 'circle', x: Math.round(Nx * (m ? 0.3 : 0.69)), y: Math.round(Ny * (m ? my : 0.5)) + 0.5, r }], L: 2 * r };
     },
   },
   {
     title: { vi: 'Thất tốc cánh NACA 0012 — góc tấn 16°', en: 'NACA 0012 stall — 16° AoA' },
     field: 'vort', unit: 'ω·c/U∞', labels: ['−', '0', '+'], u0: 0.1, nu: 0.02, inlet: 'uniform',
-    geometry(Nx, Ny, m) {
+    geometry(Nx, Ny, m, my) {
       const c = Math.round(m ? Nx * 0.5 : Ny * 0.42);
-      return { shapes: [{ kind: 'poly', pts: naca(Nx * (m ? 0.32 : 0.68), Ny * (m ? 0.74 : 0.48), c, 16) }], L: c };
+      return { shapes: [{ kind: 'poly', pts: naca(Nx * (m ? 0.32 : 0.68), Ny * (m ? my : 0.48), c, 16) }], L: c };
     },
   },
   {
     title: { vi: 'Khí động học xe — vùng wake', en: 'Vehicle aerodynamics — wake' },
     field: 'speed', unit: '|U|/U∞', labels: ['0.0', '0.8', '1.6'], u0: 0.1, nu: 0.016, inlet: 'uniform', ground: true,
-    geometry(Nx, Ny, m) {
+    geometry(Nx, Ny, m, my) {
       // Desktop: xe ở nửa phải, phía trên bảng HUD và không chạm vùng chữ bên trái
       const wide = Nx / Ny > 2.1; // màn hình rộng → còn nhiều chỗ bên phải chữ
       const len = Math.round(m ? Nx * 0.7 : Nx * (wide ? 0.36 : 0.32));
-      const x0 = Math.round(Nx * (m ? 0.15 : wide ? 0.555 : 0.58)), yG = Math.round(Ny * (m ? 0.925 : wide ? 0.68 : 0.64));
+      const x0 = Math.round(Nx * (m ? 0.15 : wide ? 0.555 : 0.58)), yG = Math.round(Ny * (m ? Math.min(0.93, my + 0.1) : wide ? 0.68 : 0.64));
       return { shapes: [carShape(x0, yG, len)], L: CAR_IMG_RATIO * len, groundY: yG };
     },
   },
   {
     title: { vi: 'Bó ống trao đổi nhiệt', en: 'Heat-exchanger tube bank' },
     field: 'speed', unit: '|U|/U∞', labels: ['0.0', '0.9', '1.8'], u0: 0.08, nu: 0.014, inlet: 'uniform',
-    geometry(Nx, Ny, m) {
+    geometry(Nx, Ny, m, my) {
       const s = m ? Nx : Ny;
-      const r = Math.max(4, Math.round(s * 0.05)), p = Math.round(s * 0.17);
+      const r = Math.max(4, Math.round(s * (m ? 0.045 : 0.05))), p = Math.round(s * (m ? 0.14 : 0.17));
       const shapes: Shape[] = [];
-      const x0 = Math.round(Nx * (m ? 0.2 : 0.56)), yc = Ny * (m ? 0.74 : 0.5);
-      const rowsHalf = m ? 2 : 3;
+      const x0 = Math.round(Nx * (m ? 0.2 : 0.56)), yc = Ny * (m ? my : 0.5);
+      // Điện thoại: gói gọn trong dải mô phỏng, không lấn lên vùng chữ
+      const jMin = m ? -2 : -4, jMax = m ? 1 : 4;
       for (let i = 0; i < 4; i++) {
-        for (let j = -rowsHalf - 1; j <= rowsHalf + 1; j++) {
+        for (let j = jMin; j <= jMax; j++) {
           const y = yc + (j + (i % 2) * 0.5) * p;
           if (y - r > 6 && y + r < Ny - 7) shapes.push({ kind: 'circle', x: x0 + i * p * 0.9, y, r, hot: true });
         }
@@ -137,9 +139,9 @@ export const scenes: SceneDef[] = [
   {
     title: { vi: 'Tia phun — bất ổn Kelvin–Helmholtz', en: 'Jet — Kelvin–Helmholtz instability' },
     field: 'vort', unit: 'ω·D/U<sub>j</sub>', labels: ['−', '0', '+'], u0: 0.12, nu: 0.008, inlet: 'quiescent',
-    geometry(Nx, Ny, m) {
+    geometry(Nx, Ny, m, my) {
       const hh = Math.max(5, Math.round((m ? Nx : Ny) * 0.05));
-      const xe = Math.round(Nx * (m ? 0.12 : 0.72)), yc = Math.round(Ny * (m ? 0.74 : 0.5));
+      const xe = Math.round(Nx * (m ? 0.12 : 0.72)), yc = Math.round(Ny * (m ? my : 0.5));
       const len = Math.round(Nx * 0.1), th = 2;
       return {
         shapes: [

@@ -17,8 +17,8 @@ const lines = Array.from({ length: 9 }, (_, k) => `M0 ${40 + k * 14} C 300 ${10 
     </svg>
     <div class="relative">
       <p class="eyebrow justify-center !text-cyan">{lang === 'vi' ? 'Bắt đầu dự án' : 'Start a project'}</p>
-      <h2 id="cta-title" class="mx-auto mt-5 max-w-3xl text-3xl font-light text-ink-fg md:text-5xl">
-        {words.slice(0, -2).join(' ')} <span class="font-bold">{words.slice(-2).join(' ')}</span>
+      <h2 id="cta-title" class="hd hd-ink mx-auto mt-5 max-w-3xl text-[2rem] text-ink-fg md:text-5xl">
+        {words.slice(0, -2).join(' ')} <span class="hd-hl">{words.slice(-2).join(' ')}</span>
       </h2>
       <p class="mx-auto mt-5 max-w-2xl text-ink-muted md:text-lg">{t('cta.desc')}</p>
       <div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">

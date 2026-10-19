@@ -11,8 +11,9 @@ export const site = {
   brand: 'Hiếu Vũ | Engineering',
   url: 'https://hieuvuengineering.com',
   email: 'hieuvu.sim@gmail.com',
-  phone: '0862946306',
-  cvUrl: '/cv/hieu-vu-cv.pdf', // ← thay file thật tại public/cv/hieu-vu-cv.pdf
+  phone: '0862946306', // Zalo
+  hotline: '+84764600921',
+  address: { vi: 'Hà Nội, Việt Nam', en: 'Hanoi, Vietnam' } as L,
   company: 'CFDWAYS',
   companyUrl: { vi: 'https://cfdways.com/vi/', en: 'https://cfdways.com/' } as L,
   role: {
@@ -67,48 +68,42 @@ export const blogCategories = {
 export type BlogCategory = keyof typeof blogCategories;
 
 /* Dịch vụ — bám theo các nhóm ngành trọng tâm của CFDWAYS. id dùng để form liên hệ chọn sẵn (?service=...) */
-export const services: { id: string; icon: string; title: L; desc: L; points: L<string[]> }[] = [
+export const services: { id: string; icon: string; title: L; desc: L }[] = [
   {
     id: 'energy',
     icon: 'flame',
     title: { vi: 'Năng lượng & đốt cháy', en: 'Energy & combustion' },
     desc: { vi: 'Buồng đốt, lò hơi, nồi hơi thu hồi nhiệt và hệ xử lý khí thải — giảm tiêu hao nhiên liệu và phát thải.', en: 'Furnaces, boilers, HRSGs and flue-gas treatment — lower fuel consumption and emissions.' },
-    points: { vi: ['Đốt cháy & bức xạ nhiệt', 'Đồng đốt nhiên liệu thay thế', 'DeNOx, SNCR, khử lưu huỳnh'], en: ['Combustion & radiation', 'Alternative-fuel co-firing', 'DeNOx, SNCR, desulphurisation'] },
   },
   {
     id: 'multiphase',
     icon: 'droplets',
     title: { vi: 'Công nghiệp quá trình', en: 'Process industry' },
     desc: { vi: 'Sấy, sấy phun, lọc bụi, khuấy trộn và thiết bị phản ứng cho xi măng, hóa chất, thực phẩm.', en: 'Drying, spray drying, dust collection, mixing and reactors for cement, chemicals and food.' },
-    points: { vi: ['Dòng đa pha VOF / Eulerian', 'Hạt Lagrangian & DEM', 'Phân bố dòng trong thiết bị'], en: ['VOF / Eulerian multiphase', 'Lagrangian particles & DEM', 'Flow distribution in equipment'] },
   },
   {
     id: 'hvac',
     icon: 'server',
     title: { vi: 'HVAC, công trình & Data Center', en: 'HVAC, buildings & data centers' },
     desc: { vi: 'Phân bố nhiệt độ, luồng gió và tiện nghi nhiệt cho nhà xưởng, phòng sạch, kho lạnh, phòng máy chủ.', en: 'Temperature, airflow and comfort for factories, cleanrooms, cold storage and server rooms.' },
-    points: { vi: ['Hot-spot & bố trí dàn nóng/CRAC', 'Kho lạnh, tủ cấp đông', 'Chỉ số PMV/PPD'], en: ['Hot-spots & condenser/CRAC layout', 'Cold rooms, blast freezers', 'PMV/PPD comfort indices'] },
   },
   {
     id: 'thermal',
     icon: 'thermometer',
     title: { vi: 'Truyền nhiệt & quản lý nhiệt', en: 'Heat transfer & thermal management' },
-    desc: { vi: 'CHT cho bộ trao đổi nhiệt, tủ điện, linh kiện điện tử và pack pin — kết hợp FloEFD/FloTherm và Amesim.', en: 'CHT for heat exchangers, enclosures, electronics and battery packs — with FloEFD/FloTherm and Amesim.' },
-    points: { vi: ['Truyền nhiệt liên hợp (CHT)', 'Đồng mô phỏng 1D–3D', 'Bình ngưng, bộ trao đổi nhiệt'], en: ['Conjugate heat transfer (CHT)', '1D–3D co-simulation', 'Condensers, heat exchangers'] },
+    desc: { vi: 'Bộ trao đổi nhiệt, tủ điện, linh kiện điện tử và pack pin — kiểm soát nhiệt độ, tránh quá nhiệt và kéo dài tuổi thọ thiết bị.', en: 'Heat exchangers, electrical cabinets, electronics and battery packs — keep temperatures in check, avoid overheating and extend equipment life.' },
   },
   {
     id: 'turbo',
     icon: 'fan',
     title: { vi: 'Bơm, quạt & khí động học', en: 'Pumps, fans & aerodynamics' },
     desc: { vi: 'Đường đặc tính, hiệu suất, xâm thực và tải gió cho bơm, quạt, đường ống và công trình.', en: 'Performance curves, efficiency, cavitation and wind loads for pumps, fans, ducts and structures.' },
-    points: { vi: ['Đường đặc tính H-Q', 'MRF & lưới chuyển động', 'Tải gió, hầm gió số'], en: ['H-Q performance curves', 'MRF & mesh motion', 'Wind loads, virtual wind tunnel'] },
   },
   {
     id: 'training',
     icon: 'graduation',
     title: { vi: 'Đào tạo & license Simcenter', en: 'Training & Simcenter licenses' },
     desc: { vi: 'Đào tạo Simcenter STAR-CCM+ trên bài toán của chính đơn vị bạn; tư vấn bản quyền phần mềm Simcenter qua CFDWAYS.', en: 'Simcenter STAR-CCM+ training on your own problems; Simcenter software licensing through CFDWAYS.' },
-    points: { vi: ['Doanh nghiệp, viện, nhà trường', 'Demo trên mô hình của bạn', 'Hỗ trợ kỹ thuật tiếng Việt'], en: ['Companies, institutes, universities', 'Demo on your own model', 'Local technical support'] },
   },
 ];
 

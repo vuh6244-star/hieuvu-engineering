@@ -4,131 +4,101 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import FlowCanvas from '@/components/FlowCanvas.astro';
 import Icon from '@/components/Icon.astro';
 import SectionHeading from '@/components/SectionHeading.astro';
-import ProjectCard from '@/components/ProjectCard.astro';
 import PostCard from '@/components/PostCard.astro';
 import CtaPanel from '@/components/CtaPanel.astro';
-import portrait from '@/assets/portrait.jpg';
-import { engagement, process, services, site, toolset } from '@/data/site';
+import ChannelStrip from '@/components/ChannelStrip.astro';
+import imgEnergy from '@/assets/services/energy.webp';
+import imgProcess from '@/assets/services/multiphase.webp';
+import imgHvac from '@/assets/services/hvac.webp';
+import imgTurbo from '@/assets/services/turbo.webp';
+import imgTraining from '@/assets/services/training.webp';
+import imgThermal from '@/assets/services/thermal.webp';
+import SolutionPillars from '@/components/SolutionPillars.astro';
+import IndustryGrid from '@/components/IndustryGrid.astro';
+import DigitalEngineering from '@/components/DigitalEngineering.astro';
+import { engagement, process, services, site } from '@/data/site';
 import { localize, useTranslations, type Lang } from '@/i18n/ui';
-import { getPosts, getProjects } from '@/lib/content';
+import { getPosts } from '@/lib/content';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
 
-const projects = (await getProjects(lang)).slice(0, 3);
+/* Ảnh minh họa thẻ Dịch vụ (chủ dự án cung cấp) */
+const serviceImages: Record<string, ImageMetadata> = { energy: imgEnergy, multiphase: imgProcess, hvac: imgHvac, thermal: imgThermal, turbo: imgTurbo, training: imgTraining };
+
 const posts = (await getPosts(lang)).slice(0, 3);
-const [lead, ...rest] = projects;
 
 const title = L('Hiếu Vũ — Kỹ sư mô phỏng CFD | Simcenter STAR-CCM+', 'Hieu Vu — CFD Simulation Engineer | Simcenter STAR-CCM+');
 ---
 
-<BaseLayout lang={lang} title={title} description={site.description[lang]} type="profile">
+<BaseLayout lang={lang} title={title} description={site.description[lang]} type="profile" forceDark>
   <!-- ===================== HERO ===================== -->
   <section class="px-3 pt-3 md:px-4 md:pt-4" aria-labelledby="hero-title">
-    <div class="relative isolate flex min-h-[min(54rem,100svh)] items-center overflow-hidden rounded-[var(--radius-panel)] bg-ink text-ink-fg">
+    <div class="relative isolate flex min-h-[max(40rem,100svh)] items-start overflow-hidden md:min-h-[min(54rem,100svh)] md:items-center rounded-[var(--radius-panel)] bg-ink text-ink-fg">
       <div class="absolute inset-0 -z-10" aria-hidden="true" style="background: radial-gradient(70% 60% at 75% 45%, #0f1f3d 0%, transparent 70%), radial-gradient(50% 50% at 0% 100%, rgb(37 99 235 / 0.18), transparent 70%)"></div>
       <FlowCanvas lang={lang} />
-      <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/75 to-transparent md:via-ink/40" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink from-30% via-ink/70 via-50% to-transparent to-[64%] md:bg-gradient-to-r md:from-ink md:from-0% md:via-ink/40 md:via-50% md:to-transparent md:to-100%" aria-hidden="true"></div>
 
-      <div class="container-x relative pb-48 pt-32 md:pb-24 md:pt-36">
+      <div class="container-x relative pb-56 pt-24 md:pb-24 md:pt-36" data-hero-text>
         <div class="max-w-4xl">
           <p class="inline-flex items-center gap-2 rounded-full border border-ink-line bg-ink-2/80 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted backdrop-blur">
             <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan opacity-60"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-cyan"></span></span>
             {L('Kỹ sư R&D chuyên sâu về CFD', 'R&D Engineer specialising in CFD')}
           </p>
-          <h1 id="hero-title" class="mt-7 font-sans text-[2.5rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-6xl lg:text-[4.75rem]">
+          <h1 id="hero-title" class="mt-5 font-sans text-[2.3rem] md:mt-7 font-bold leading-[1.06] tracking-[-0.035em] sm:text-6xl lg:text-[4.75rem]">
             {L('Từ dữ liệu', 'From flow')} <span class="whitespace-nowrap">{L('dòng chảy,', 'data')}</span>
             <span class="block font-bold">
               <span class="whitespace-nowrap">{L('đến giải pháp', 'to optimal')}</span> <span class="bg-gradient-to-r from-cyan via-sky-300 to-blue-400 bg-clip-text text-transparent">{L('tối ưu.', 'solutions.')}</span>
             </span>
           </h1>
-          <p class="mt-7 max-w-2xl text-lg leading-relaxed text-ink-muted md:text-xl">
+          <p class="mt-5 max-w-2xl text-base leading-relaxed text-ink-muted sm:text-lg md:mt-7 md:text-xl">
             {L(
               'Chuyển hóa các bài toán vật lý phức tạp thành dữ liệu ra quyết định chính xác. Nhanh hơn, tinh gọn hơn, hiệu quả hơn.',
               'Turning complex physics problems into precise, decision-ready data. Faster, leaner, more effective.',
             )}
           </p>
-          <div class="mt-10 flex flex-col gap-3 sm:flex-row">
-            <a href={localize('/projects', lang)} class="btn btn-primary">{L('Dự án Demo', 'Demo projects')} <Icon name="arrow-right" size={18} /></a>
-            <a href={localize('/contact', lang)} class="btn btn-ghost-ink">{t('nav.cta')}</a>
+          <div class="mt-7 flex gap-3 md:mt-10">
+            <a href={localize('/projects', lang)} class="btn btn-primary max-sm:flex-1 max-sm:px-3 max-sm:text-sm">{L('Dự án Demo', 'Demo projects')} <Icon name="arrow-right" size={18} /></a>
+            <a href={localize('/contact', lang)} class="btn btn-ghost-ink max-sm:flex-1 max-sm:px-3 max-sm:text-sm">{t('nav.cta')}</a>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ===================== TOOLSET STRIP ===================== -->
-  <section class="container-x py-10" aria-label={L('Bộ công cụ', 'Toolset')}>
-    <div class="flex flex-col gap-6 md:flex-row md:items-center md:gap-10">
-      <p class="shrink-0 font-mono text-xs uppercase tracking-[0.14em] text-muted">{L('Hệ sinh thái Siemens Xcelerator', 'Siemens Xcelerator ecosystem')}</p>
-      <ul class="grid flex-1 grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
-        {toolset.map((tool) => (
-          <li class="border-l border-line pl-4">
-            <p class="font-display text-[0.95rem] font-semibold text-fg">{tool.name}</p>
-            <p class="text-xs text-muted">{tool.role[lang]}</p>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </section>
+  <!-- ===================== KÊNH NỘI DUNG: YouTube · LinkedIn · TikTok ===================== -->
+  <ChannelStrip lang={lang} />
 
-  <!-- ===================== ABOUT TEASER ===================== -->
-  <section class="section bg-grid" aria-labelledby="about-title">
-    <div class="container-x grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
-      <div class="reveal relative mx-auto w-full max-w-md lg:col-span-5">
-        <div class="absolute -inset-3 rounded-[2rem] border border-dashed border-line-strong" aria-hidden="true"></div>
-        <div class="relative overflow-hidden rounded-[1.75rem] bg-ink">
-          <Image src={portrait} alt={L('Chân dung Hiếu Vũ — kỹ sư mô phỏng CFD', 'Portrait of Hieu Vu — CFD simulation engineer')} widths={[400, 640, 900]} sizes="(min-width: 1024px) 28rem, 90vw" class="aspect-[4/5] w-full object-cover object-top" loading="lazy" />
-          <div class="absolute inset-x-3 bottom-3 rounded-2xl border border-white/10 bg-ink/75 p-4 text-ink-fg backdrop-blur-md">
-            <p class="font-display font-semibold">{site.name}</p>
-            <p class="text-sm text-ink-muted">{site.role[lang]}</p>
-          </div>
-        </div>
-      </div>
-      <div class="lg:col-span-7">
-        <SectionHeading id="about-title" eyebrow={L('Về tôi', 'About me')} title={L('Kỹ sư đứng giữa', 'An engineer between')} strong={L('vật lý và sản phẩm.', 'physics and product.')} />
-        <p class="reveal mt-6 text-lg text-fg-soft">{site.bioShort[lang]}</p>
-        <ul class="reveal mt-8 grid gap-4 sm:grid-cols-2">
-          {[
-            { icon: 'target', t: L('Tư duy kiểm chứng', 'Verification mindset'), d: L('Độc lập lưới, kiểm tra hội tụ và đối chiếu thực nghiệm.', 'Mesh independence, convergence checks and validation.') },
-            { icon: 'layers', t: L('Đa vật lý', 'Multiphysics'), d: L('CFD kết hợp CHT, đa pha và mô phỏng hệ thống 1D.', 'CFD combined with CHT, multiphase and 1D systems.') },
-            { icon: 'briefcase', t: L('Định hướng ứng dụng', 'Industry-driven'), d: L('Kết quả trả lời câu hỏi thiết kế, không chỉ là hình đẹp.', 'Results that answer design questions, not just pretty pictures.') },
-            { icon: 'graduation', t: L('Chia sẻ kiến thức', 'Knowledge sharing'), d: L('Bài viết & video giúp người học CFD đi đúng hướng.', 'Articles & videos helping CFD learners get it right.') },
-          ].map((f) => (
-            <li class="flex gap-3">
-              <span class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-accent"><Icon name={f.icon} size={20} /></span>
-              <div><p class="font-semibold text-fg">{f.t}</p><p class="text-sm text-muted">{f.d}</p></div>
-            </li>
-          ))}
-        </ul>
-        <div class="reveal mt-9 flex flex-wrap gap-3">
-          <a href={localize('/about', lang)} class="btn btn-dark">{L('Đọc thêm về tôi', 'More about me')} <Icon name="arrow-right" size={18} /></a>
-          <a href={site.cvUrl} class="btn btn-ghost" download><Icon name="download" size={18} /> {t('common.downloadCv')}</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <!-- ===================== 4 ĐIỂM THẤT BẠI CỦA DỰ ÁN CFD ===================== -->
+  <SolutionPillars lang={lang} />
+
+  <!-- ===================== CÁC NGÀNH CFD (di chuột → nút Xem Demo) ===================== -->
+  <IndustryGrid lang={lang} />
+
+  <!-- ===================== CFD × DIGITAL ENGINEERING ===================== -->
+  <DigitalEngineering lang={lang} />
 
   <!-- ===================== SERVICES ===================== -->
   <section id="services" class="section" aria-labelledby="services-title">
     <div class="container-x">
       <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <SectionHeading id="services-title" eyebrow={L('Dịch vụ', 'Services')} title={L('Giải bài toán dòng chảy', 'Solving flow problems')} strong={L('từ ý tưởng đến báo cáo.', 'from concept to report.')} desc={L('Triển khai cùng đội ngũ CFDWAYS — đối tác phần mềm của Siemens, với license Simcenter và hạ tầng tính toán chuyên dụng. Mọi mô hình đều được kiểm chứng với dữ liệu thiết kế hoặc số đo vận hành.', 'Delivered with the CFDWAYS team — a Siemens software partner, with Simcenter licenses and dedicated compute. Every model is verified against design data or plant measurements.')} />
+        <SectionHeading id="services-title" eyebrow={L('Dịch vụ', 'Services')} title={L('Thiết kế, tối ưu hóa hệ thống', 'Design and optimise systems')} strong={L('qua các phân tích chuyên sâu về CFD.', 'through in-depth CFD analysis.')} desc={L('Triển khai cùng đội ngũ chuyên gia giàu kinh nghiệm tại CFDWAYS - Đối tác Siemens với các tùy chọn License và hạ tầng tính toán chuyên dụng mạnh mẽ, đáp ứng các yêu cầu khắt khe về độ chính xác và thời gian triển khai dự án.', 'Delivered with the experienced specialist team at CFDWAYS - a Siemens partner offering flexible licensing options and powerful dedicated compute infrastructure, meeting demanding requirements for accuracy and project delivery time.')} />
       </div>
-      <div class="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div class="mt-8 grid gap-3 sm:gap-4 md:mt-12 md:grid-cols-2 lg:grid-cols-3">
         {services.map((s, i) => (
-          <a href={`${localize('/contact', lang)}?service=${s.id}`} class="group card reveal flex flex-col p-6 transition-[border-color,translate] duration-300 hover:-translate-y-1 hover:border-accent/60 md:p-7" style={`transition-delay:${(i % 3) * 60}ms`}>
-            <div class="flex items-center justify-between">
-              <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-ink text-cyan"><Icon name={s.icon} size={22} /></span>
-              <Icon name="arrow-up-right" size={20} class="text-muted transition-[color,translate] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
+          <a href={`${localize('/contact', lang)}?service=${s.id}`} class="group card reveal flex flex-col overflow-hidden transition-[border-color,translate] duration-300 hover:-translate-y-1 hover:border-accent/60" style={`transition-delay:${(i % 3) * 60}ms`}>
+            <div class="relative aspect-[16/10] overflow-hidden bg-ink">
+              <Image src={serviceImages[s.id]} alt={s.title[lang]} widths={[480, 720, 1000]} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" loading="lazy" />
+              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" aria-hidden="true"></div>
+              <span class="absolute left-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-ink/85 text-cyan ring-1 ring-white/10 backdrop-blur"><Icon name={s.icon} size={20} /></span>
+              <span class="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-ink transition-[background-color,translate] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:bg-cyan"><Icon name="arrow-up-right" size={18} /></span>
             </div>
-            <h3 class="mt-6 text-xl font-semibold text-fg">{s.title[lang]}</h3>
-            <p class="mt-2 text-sm text-muted">{s.desc[lang]}</p>
-            <ul class="mt-5 space-y-1.5 border-t border-line pt-4 text-sm text-fg-soft">
-              {s.points[lang].map((p) => <li class="flex items-center gap-2"><Icon name="check" size={15} class="text-accent" />{p}</li>)}
-            </ul>
+            <div class="flex flex-1 flex-col p-5 md:p-6">
+              <h3 class="text-lg font-semibold text-fg sm:text-xl">{s.title[lang]}</h3>
+              <p class="mt-2 text-sm text-muted">{s.desc[lang]}</p>
+            </div>
           </a>
         ))}
       </div>
@@ -136,14 +106,14 @@ const title = L('Hiếu Vũ — Kỹ sư mô phỏng CFD | Simcenter STAR-CCM+',
       <!-- Quy trình -->
       <div class="reveal mt-16 overflow-hidden rounded-[var(--radius-panel)] bg-ink p-6 text-ink-fg md:p-10">
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <h3 class="text-2xl font-light md:text-3xl">{L('Quy trình', 'How we')} <span class="font-bold">{L('làm việc', 'work together')}</span></h3>
+          <h3 class="hd hd-ink text-2xl md:text-3xl">{L('Quy trình', 'How we')} <span class="hd-hl">{L('làm việc', 'work together')}</span></h3>
           <p class="max-w-md text-sm text-ink-muted">{L('Minh bạch từng bước — bạn luôn biết mô hình đang ở đâu và kết quả đáng tin đến mức nào.', 'Transparent at every step — you always know where the model stands and how reliable the results are.')}</p>
         </div>
         <ol class="mt-10 grid gap-8 md:grid-cols-4 md:gap-6">
           {process.map((p, i) => (
             <li class="relative">
               <div class="flex items-center gap-3">
-                <span class="font-mono text-sm text-cyan">0{i + 1}</span>
+                <span class="font-mono text-lg font-semibold text-cyan">0{i + 1}</span>
                 <span class="h-px flex-1 bg-gradient-to-r from-cyan/60 to-transparent" aria-hidden="true"></span>
               </div>
               <p class="mt-4 font-display text-lg font-semibold">{p.title[lang]}</p>
@@ -155,9 +125,8 @@ const title = L('Hiếu Vũ — Kỹ sư mô phỏng CFD | Simcenter STAR-CCM+',
 
       <!-- Hình thức hợp tác -->
       <div class="mt-6 grid gap-4 md:grid-cols-3">
-        {engagement.map((e, i) => (
+        {engagement.map((e) => (
           <a href={`${localize('/contact', lang)}?service=${e.service}`} class="group card reveal flex items-start gap-4 p-6 transition-colors hover:border-accent/60">
-            <span class="font-mono text-sm text-accent">0{i + 1}</span>
             <span class="flex-1">
               <span class="block font-display text-lg font-semibold text-fg">{e.title[lang]}</span>
               <span class="mt-1 block text-sm text-muted">{e.desc[lang]}</span>
@@ -173,24 +142,6 @@ const title = L('Hiếu Vũ — Kỹ sư mô phỏng CFD | Simcenter STAR-CCM+',
     </div>
   </section>
 
-  <!-- ===================== FEATURED PROJECTS ===================== -->
-  {lead && (
-    <section class="section border-t border-line bg-surface-2/40" aria-labelledby="projects-title">
-      <div class="container-x">
-        <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <SectionHeading id="projects-title" eyebrow={L('Dự án tiêu biểu', 'Featured work')} title={L('Kết quả mô phỏng', 'Simulation results')} strong={L('nói bằng số liệu.', 'that speak in numbers.')} />
-          <a href={localize('/projects', lang)} class="link-arrow shrink-0">{t('common.viewAll')} <Icon name="arrow-right" size={18} /></a>
-        </div>
-        <div class="mt-12 grid gap-5 lg:grid-cols-2">
-          <ProjectCard project={lead} lang={lang} size="large" />
-          <div class="grid gap-5">
-            {rest.map((p) => <ProjectCard project={p} lang={lang} />)}
-          </div>
-        </div>
-      </div>
-    </section>
-  )}
-
   <!-- ===================== LATEST POSTS ===================== -->
   {posts.length > 0 && (
     <section class="section" aria-labelledby="blog-title">
@@ -199,7 +150,7 @@ const title = L('Hiếu Vũ — Kỹ sư mô phỏng CFD | Simcenter STAR-CCM+',
           <SectionHeading id="blog-title" eyebrow={L('Kiến thức', 'Insights')} title={L('Chia sẻ từ', 'Notes from')} strong={L('thực tế mô phỏng.', 'real-world simulation.')} desc={L('Hướng dẫn Simcenter STAR-CCM+, kiến thức nền tảng CFD và bài học từ dự án.', 'Simcenter STAR-CCM+ tutorials, CFD fundamentals and project lessons.')} />
           <a href={localize('/blog', lang)} class="link-arrow shrink-0">{t('common.viewAll')} <Icon name="arrow-right" size={18} /></a>
         </div>
-        <div class="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div class="-mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] md:mx-0 md:mt-12 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3 max-md:[&>*]:w-[84%] max-md:[&>*]:shrink-0 max-md:[&>*]:snap-start">
           {posts.map((p) => <PostCard post={p} lang={lang} />)}
         </div>
       </div>

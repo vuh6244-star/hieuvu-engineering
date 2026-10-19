@@ -2,6 +2,7 @@
 import Icon from './Icon.astro';
 import Logo from './Logo.astro';
 import { site, socials } from '@/data/site';
+import { brandLogos } from '@/lib/brandLogos';
 import { localize, useTranslations, type Lang } from '@/i18n/ui';
 
 interface Props { lang: Lang }
@@ -9,9 +10,10 @@ const { lang } = Astro.props;
 const t = useTranslations(lang);
 const year = new Date().getFullYear();
 const nav = [
-  { href: '/about', label: t('nav.about') },
-  { href: '/projects', label: t('nav.projects') },
+  { href: '/solutions', label: t('nav.solutions') },
   { href: '/blog', label: t('nav.blog') },
+  { href: '/exercises', label: t('nav.exercises') },
+  { href: '/projects', label: t('nav.projects') },
   { href: '/contact', label: t('nav.contact') },
 ];
 ---
@@ -30,11 +32,11 @@ const nav = [
                 href={s.href}
                 target="_blank"
                 rel="noopener"
-                class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface text-fg transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-accent"
                 aria-label={s.label}
                 title={s.label}
               >
-                <Icon name={s.id} size={18} />
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" set:html={brandLogos[s.id]} />
               </a>
             </li>
           ))
@@ -43,15 +45,14 @@ const nav = [
     </div>
 
     <nav class="md:col-span-3" aria-label={t('footer.explore')}>
-      <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t('footer.explore')}</h2>
+      <h2 class="font-mono text-xs font-bold uppercase tracking-[0.14em] text-fg">{t('footer.explore')}</h2>
       <ul class="mt-4 space-y-2.5">
         {nav.map((l) => <li><a href={localize(l.href, lang)} class="text-fg-soft transition-colors hover:text-accent">{l.label}</a></li>)}
-        <li><a href={site.cvUrl} class="text-fg-soft transition-colors hover:text-accent" download>{t('common.downloadCv')}</a></li>
       </ul>
     </nav>
 
     <div class="md:col-span-4">
-      <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t('footer.newsletter')}</h2>
+      <h2 class="font-mono text-xs font-bold uppercase tracking-[0.14em] text-fg">{t('footer.newsletter')}</h2>
       <p class="mt-4 text-sm text-muted">{t('footer.newsletterDesc')}</p>
       <form class="mt-4 flex gap-2" data-newsletter novalidate>
         <label for="nl-email" class="sr-only">{t('footer.emailPlaceholder')}</label>
@@ -60,18 +61,25 @@ const nav = [
         <input type="hidden" name="lang" value={lang} />
         <button type="submit" class="btn btn-dark shrink-0">{t('footer.subscribe')}</button>
       </form>
-      <p class="mt-2 min-h-5 text-sm" role="status" aria-live="polite" data-newsletter-status data-ok={t('footer.subscribed')}></p>
-      <a href={`mailto:${site.email}`} class="mt-4 inline-flex items-center gap-2 text-sm text-fg-soft hover:text-accent">
-        <Icon name="mail" size={16} /> {site.email}
-      </a>
+      <p class="mt-1.5 min-h-5 text-sm empty:min-h-0" role="status" aria-live="polite" data-newsletter-status data-ok={t('footer.subscribed')}></p>
+      <!-- thông tin liên lạc: liền khối với form bản tin -->
+      <ul class="mt-3 space-y-2 text-sm text-fg-soft">
+        <li><a href={`mailto:${site.email}`} class="inline-flex items-center gap-2.5 hover:text-accent"><Icon name="mail" size={16} class="text-accent" /> {site.email}</a></li>
+        <li><a href={`tel:${site.hotline}`} class="inline-flex items-center gap-2.5 hover:text-accent"><Icon name="phone" size={16} class="text-accent" /> {site.hotline.replace(/^\+84(\d{3})(\d{3})(\d{3})$/, '+84 $1 $2 $3')}</a></li>
+        <li class="inline-flex items-center gap-2.5"><Icon name="map-pin" size={16} class="text-accent" /> {site.address[lang]}</li>
+      </ul>
     </div>
   </div>
   <div class="border-t border-line">
     <div class="container-x flex flex-col gap-2 py-6 text-sm text-muted md:flex-row md:items-center md:justify-between">
       <p>© {year} {site.brand}. {t('footer.rights')}</p>
-      <p class="font-mono text-xs">
-        {lang === 'vi' ? 'Kỹ sư R&D tại' : 'R&D Engineer at'} <a href={site.companyUrl[lang]} target="_blank" rel="noopener" class="text-fg-soft underline-offset-4 hover:text-accent hover:underline">{site.company}</a> · Simcenter STAR-CCM+
-      </p>
+      <nav aria-label={lang === 'vi' ? 'Pháp lý' : 'Legal'}>
+        <ul class="flex flex-wrap items-center gap-x-5 gap-y-1">
+          <li><a href={localize('/privacy', lang)} class="hover:text-accent">{t('footer.privacy')}</a></li>
+          <li aria-hidden="true" class="text-line-strong">|</li>
+          <li><a href={localize('/terms', lang)} class="hover:text-accent">{t('footer.terms')}</a></li>
+        </ul>
+      </nav>
     </div>
   </div>
 </footer>

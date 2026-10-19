@@ -30,10 +30,10 @@ src/
 │  └─ blog/vi|en/     bài viết (.mdx)
 ├─ data/site.ts       ⭐ THÔNG TIN CÁ NHÂN, dịch vụ, số liệu, mạng xã hội, ý tưởng sắp ra mắt
 ├─ i18n/ui.ts         chuỗi giao diện VI/EN
-├─ pages/             định tuyến (/, /en, /about, /projects, /blog, /contact, /api/*)
+├─ pages/             định tuyến (/, /en, /projects, /blog, /contact, /api/*)
 ├─ views/             nội dung từng trang (dùng chung cho 2 ngôn ngữ)
 └─ styles/global.css  design tokens (màu, font, khoảng cách)
-public/               favicon, og-default.png, cv/hieu-vu-cv.pdf
+public/               favicon, og-default.png, hero/
 server.mjs            server Node.js production (thêm header bảo mật & cache)
 scripts/prepare-assets.mjs   tách nền logo → favicon, ảnh OG (chạy: npm run assets)
 ```
@@ -73,11 +73,9 @@ Sửa mảng `upcomingProjects` và `upcomingPosts` trong `src/data/site.ts` —
 
 | Vị trí | Việc cần làm |
 |---|---|
-| `public/cv/hieu-vu-cv.pdf` | Thay bằng CV thật (giữ nguyên tên file) |
 | `src/content/projects/*` | Thay số liệu mẫu bằng dự án thật, xóa `sample: true` |
 | `src/content/blog/*` | Đọc duyệt 3 bài mẫu, xóa `sample: true` |
-| `src/views/AboutView.astro` → `timeline`, `certs` | Tên trường, năm học, chứng chỉ thật |
-| `src/data/site.ts`, `HomeView.astro`, `AboutView.astro` | Đang ghi "đối tác phần mềm của Siemens" đúng như trang Đội ngũ của cfdways.com. Nếu CFDWAYS cho phép ghi "đối tác cấp 1", sửa lại tại đây |
+| `src/data/site.ts`, `HomeView.astro` | Đang ghi "đối tác phần mềm của Siemens" đúng như trang Đội ngũ của cfdways.com. Nếu CFDWAYS cho phép ghi "đối tác cấp 1", sửa lại tại đây |
 
 ## 5. Biến môi trường
 
