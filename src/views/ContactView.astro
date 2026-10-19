@@ -1,0 +1,244 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/SectionHeading.astro';
+import Icon from '@/components/Icon.astro';
+import { services, site, socials } from '@/data/site';
+import { type Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const calendly = import.meta.env.PUBLIC_CALENDLY_URL;
+
+const channels = [
+  { icon: 'mail', label: 'Email', value: site.email, href: `mailto:${site.email}` },
+  { icon: 'zalo', label: 'Zalo', value: '0862 946 306', href: `https://zalo.me/${site.phone}` },
+  { icon: 'linkedin', label: 'LinkedIn', value: 'in/hieuvu2002', href: socials[0].href },
+  { icon: 'download', label: 'CV', value: L('Tải CV (PDF)', 'Download CV (PDF)'), href: site.cvUrl, download: true },
+];
+
+const faqs = [
+  { q: L('Tôi cần chuẩn bị gì để nhận báo giá?', 'What do I need to prepare for a quote?'), a: L('Mô tả mục tiêu (bạn muốn biết điều gì), điều kiện vận hành chính (lưu lượng, nhiệt độ, tốc độ…) và file CAD nếu có (STEP/Parasolid/NX). Chưa có CAD vẫn có thể trao đổi phương án.', 'Your goal (what you want to learn), key operating conditions (flow rate, temperature, speed…) and CAD if available (STEP/Parasolid/NX). No CAD yet? We can still discuss the approach.') },
+  { q: L('Dữ liệu của tôi có được bảo mật?', 'Is my data kept confidential?'), a: L('Có. Mọi dự án đều có thể ký NDA trước khi trao đổi dữ liệu. Kết quả chỉ được công bố trên website khi có sự đồng ý của bạn và đã ẩn thông tin nhạy cảm.', 'Yes. An NDA can be signed before any data exchange. Results are only published here with your consent and with sensitive details removed.') },
+  { q: L('Một dự án mô phỏng thường mất bao lâu?', 'How long does a simulation project take?'), a: L('Từ vài ngày (đánh giá nhanh một phương án) đến vài tuần (nhiều phương án, mô phỏng không dừng, đa vật lý). Tiến độ cụ thể nằm trong đề xuất.', 'From a few days (quick single-case assessment) to several weeks (multiple variants, transient, multiphysics). The exact timeline is in the proposal.') },
+  { q: L('Có nhận đào tạo STAR-CCM+ không?', 'Do you offer STAR-CCM+ training?'), a: L('Có — đào tạo theo nhóm hoặc doanh nghiệp, thiết kế theo bài toán thực tế của bạn. Chọn “Đào tạo & tư vấn CFD” trong form.', 'Yes — team or corporate training tailored to your real problems. Choose “CFD training & consulting” in the form.') },
+];
+---
+
+<BaseLayout
+  lang={lang}
+  title={L('Liên hệ — Yêu cầu mô phỏng CFD', 'Contact — Request a CFD simulation')}
+  description={L('Gửi yêu cầu mô phỏng CFD, đặt lịch tư vấn hoặc kết nối với Hiếu Vũ qua email, Zalo, LinkedIn. Phản hồi trong 24 giờ làm việc.', 'Request a CFD simulation, book a consultation or connect with Hieu Vu via email, Zalo or LinkedIn. Reply within one business day.')}
+>
+  <section class="bg-grid pb-16 pt-32 md:pt-40">
+    <div class="container-x grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-5">
+        <SectionHeading as="h1" eyebrow={L('Liên hệ', 'Contact')} title={L('Hãy kể cho tôi về', 'Tell me about')} strong={L('bài toán của bạn.', 'your problem.')} desc={L('Mô tả càng cụ thể, đề xuất càng chính xác. Tôi phản hồi trong vòng 24 giờ làm việc.', 'The more specific, the more accurate the proposal. I reply within one business day.')} />
+        <ul class="reveal mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          {channels.map((c) => (
+            <li>
+              <a href={c.href} target={c.href.startsWith('http') ? '_blank' : undefined} rel={c.href.startsWith('http') ? 'noopener' : undefined} download={c.download} class="card group flex items-center gap-4 p-4 transition-colors hover:border-accent/60">
+                <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink text-cyan"><Icon name={c.icon} size={20} /></span>
+                <span class="min-w-0">
+                  <span class="block text-xs text-muted">{c.label}</span>
+                  <span class="block truncate font-medium text-fg">{c.value}</span>
+                </span>
+                <Icon name="arrow-up-right" size={18} class="ml-auto shrink-0 text-muted transition-colors group-hover:text-accent" />
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="reveal mt-6 flex items-center gap-2 text-sm text-muted"><Icon name="map-pin" size={16} /> {site.location[lang]} · {L('Làm việc từ xa & tại chỗ', 'Remote & on-site')}</p>
+      </div>
+
+      <div class="lg:col-span-7">
+        <form class="card reveal grid gap-5 p-6 md:p-8" data-contact novalidate>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label class="field-label" for="c-name">{L('Họ và tên', 'Full name')} <span class="text-accent" aria-hidden="true">*</span></label>
+              <input id="c-name" name="name" class="field" required autocomplete="name" maxlength="120" aria-describedby="c-name-err" />
+              <p id="c-name-err" class="field-error" hidden>{L('Vui lòng nhập họ tên.', 'Please enter your name.')}</p>
+            </div>
+            <div>
+              <label class="field-label" for="c-email">Email <span class="text-accent" aria-hidden="true">*</span></label>
+              <input id="c-email" name="email" type="email" class="field" required autocomplete="email" maxlength="160" aria-describedby="c-email-err" />
+              <p id="c-email-err" class="field-error" hidden>{L('Email chưa hợp lệ.', 'Please enter a valid email.')}</p>
+            </div>
+            <div>
+              <label class="field-label" for="c-company">{L('Công ty / Tổ chức', 'Company / Organisation')}</label>
+              <input id="c-company" name="company" class="field" autocomplete="organization" maxlength="160" />
+            </div>
+            <div>
+              <label class="field-label" for="c-phone">{L('Số điện thoại / Zalo', 'Phone / Zalo')}</label>
+              <input id="c-phone" name="phone" type="tel" class="field" autocomplete="tel" maxlength="40" />
+            </div>
+          </div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label class="field-label" for="c-service">{L('Loại yêu cầu', 'Request type')}</label>
+              <select id="c-service" name="service" class="field">
+                {services.map((s) => <option value={s.id}>{s.title[lang]}</option>)}
+                <option value="license">{L('Mua license Simcenter (qua CFDWAYS)', 'Simcenter licenses (via CFDWAYS)')}</option>
+                <option value="profile">{L('Yêu cầu hồ sơ năng lực CFDWAYS', 'Request CFDWAYS company profile')}</option>
+                <option value="job">{L('Cơ hội việc làm / hợp tác', 'Job / partnership')}</option>
+                <option value="other">{L('Khác', 'Other')}</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="c-timeline">{L('Thời gian mong muốn', 'Desired timeline')}</label>
+              <select id="c-timeline" name="timeline" class="field">
+                <option value="">{L('Chưa xác định', 'Not sure yet')}</option>
+                <option value="urgent">{L('Gấp (< 2 tuần)', 'Urgent (< 2 weeks)')}</option>
+                <option value="month">{L('Trong 1 tháng', 'Within a month')}</option>
+                <option value="quarter">{L('Trong quý này', 'This quarter')}</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" for="c-message">{L('Mô tả bài toán', 'Describe your problem')} <span class="text-accent" aria-hidden="true">*</span></label>
+            <textarea id="c-message" name="message" class="field min-h-40" required minlength="20" maxlength="5000" aria-describedby="c-message-hint c-message-err" placeholder={L('Sản phẩm/hệ thống, mục tiêu, điều kiện vận hành, dữ liệu sẵn có…', 'Product/system, goals, operating conditions, available data…')}></textarea>
+            <p id="c-message-hint" class="mt-1.5 text-xs text-muted">{L('Tối thiểu 20 ký tự. File CAD lớn có thể gửi sau qua email.', 'At least 20 characters. Large CAD files can be sent later by email.')}</p>
+            <p id="c-message-err" class="field-error" hidden>{L('Vui lòng mô tả ngắn gọn bài toán (tối thiểu 20 ký tự).', 'Please describe your problem briefly (min. 20 characters).')}</p>
+          </div>
+          <div class="hidden" aria-hidden="true">
+            <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+          <input type="hidden" name="lang" value={lang} />
+          <input type="hidden" name="ts" value="" />
+          <label class="flex items-start gap-3 text-sm text-fg-soft">
+            <input type="checkbox" name="consent" required class="mt-1 h-4 w-4 accent-[var(--accent)]" aria-describedby="c-consent-err" />
+            <span>{L('Tôi đồng ý để Hiếu Vũ dùng thông tin này nhằm phản hồi yêu cầu. Thông tin không được chia sẻ cho bên thứ ba.', 'I agree that Hieu Vu may use this information to respond to my request. It will not be shared with third parties.')}</span>
+          </label>
+          <p id="c-consent-err" class="field-error -mt-3" hidden>{L('Vui lòng đồng ý để tiếp tục.', 'Please agree to continue.')}</p>
+          <div class="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm" role="status" aria-live="polite" data-status></p>
+            <button type="submit" class="btn btn-primary w-full sm:w-auto" data-submit>
+              <span data-label>{L('Gửi yêu cầu', 'Send request')}</span>
+              <Icon name="send" size={17} />
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Đặt lịch -->
+  <section class="container-x py-10" aria-labelledby="booking">
+    <div class="reveal grid items-center gap-8 overflow-hidden rounded-[var(--radius-panel)] bg-ink p-6 text-ink-fg md:grid-cols-2 md:p-10">
+      <div>
+        <p class="eyebrow !text-cyan">{L('Đặt lịch', 'Booking')}</p>
+        <h2 id="booking" class="mt-4 text-3xl font-light md:text-4xl">{L('Trao đổi trực tuyến', 'A quick')} <span class="font-bold">{L('30 phút.', '30-minute call.')}</span></h2>
+        <p class="mt-4 text-ink-muted">{L('Phù hợp khi bạn muốn thảo luận nhanh phương án mô phỏng trước khi gửi yêu cầu chi tiết.', 'Ideal for discussing a simulation approach before sending a detailed request.')}</p>
+      </div>
+      {
+        calendly ? (
+          <div class="h-[38rem] overflow-hidden rounded-2xl bg-white md:col-span-2" data-calendly={calendly}>
+            <button type="button" class="btn btn-primary m-6">{L('Mở lịch hẹn', 'Open calendar')}</button>
+          </div>
+        ) : (
+          <div class="rounded-2xl border border-dashed border-ink-line p-6">
+            <div class="flex items-center gap-3 text-cyan"><Icon name="calendar" size={22} /><span class="font-mono text-sm">Calendly</span></div>
+            <p class="mt-3 text-sm text-ink-muted">{L('Lịch hẹn trực tuyến sẽ sớm được kích hoạt. Trong lúc chờ, hãy nhắn Zalo để hẹn giờ.', 'Online booking is coming soon. Meanwhile, message me on Zalo to schedule a call.')}</p>
+            <a href={`https://zalo.me/${site.phone}`} target="_blank" rel="noopener" class="btn btn-ghost-ink mt-5"><Icon name="zalo" size={18} /> {L('Hẹn qua Zalo', 'Schedule via Zalo')}</a>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="container-x py-14" aria-labelledby="faq">
+    <SectionHeading id="faq" eyebrow="FAQ" title={L('Câu hỏi', 'Frequently asked')} strong={L('thường gặp.', 'questions.')} />
+    <div class="mt-10 divide-y divide-[var(--border)] border-y border-line">
+      {faqs.map((f) => (
+        <details class="group reveal py-5">
+          <summary class="flex list-none items-center justify-between gap-4 text-lg font-medium text-fg [&::-webkit-details-marker]:hidden">
+            {f.q}
+            <Icon name="chevron-down" size={20} class="shrink-0 text-muted transition-transform group-open:rotate-180" />
+          </summary>
+          <p class="mt-3 max-w-3xl text-muted">{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-contact]');
+  if (form) {
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    const label = submit.querySelector<HTMLElement>('[data-label]')!;
+    const lang = (form.elements.namedItem('lang') as HTMLInputElement).value;
+    const T = lang === 'vi'
+      ? { sending: 'Đang gửi…', ok: 'Đã gửi! Tôi sẽ phản hồi bạn sớm nhất.', fail: 'Không gửi được. Vui lòng thử lại hoặc email trực tiếp.', send: 'Gửi yêu cầu' }
+      : { sending: 'Sending…', ok: 'Sent! I will get back to you shortly.', fail: 'Could not send. Please retry or email me directly.', send: 'Send request' };
+
+    (form.elements.namedItem('ts') as HTMLInputElement).value = String(Date.now());
+
+    // Chọn sẵn loại dịch vụ từ ?service=
+    const alias: Record<string, string> = { aero: 'turbo' };
+    const raw = new URL(location.href).searchParams.get('service');
+    const pre = raw ? alias[raw] ?? raw : null;
+    const sel = form.elements.namedItem('service') as HTMLSelectElement;
+    if (pre && [...sel.options].some((o) => o.value === pre)) sel.value = pre;
+
+    const fields: [string, (el: HTMLInputElement) => boolean][] = [
+      ['name', (el) => el.value.trim().length > 1],
+      ['email', (el) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(el.value.trim())],
+      ['message', (el) => el.value.trim().length >= 20],
+      ['consent', (el) => el.checked],
+    ];
+    const check = (name: string, test: (el: HTMLInputElement) => boolean) => {
+      const el = form.elements.namedItem(name) as HTMLInputElement;
+      const ok = test(el);
+      el.setAttribute('aria-invalid', String(!ok));
+      const err = document.getElementById(`c-${name}-err`);
+      if (err) err.hidden = ok;
+      return ok;
+    };
+    fields.forEach(([n, test]) => {
+      const el = form.elements.namedItem(n) as HTMLInputElement;
+      el.addEventListener('blur', () => { if (el.value || el.type === 'checkbox') check(n, test); });
+      el.addEventListener('input', () => { if (el.getAttribute('aria-invalid') === 'true') check(n, test); });
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const results = fields.map(([n, test]) => check(n, test));
+      if (results.includes(false)) {
+        (form.elements.namedItem(fields[results.indexOf(false)][0]) as HTMLElement).focus();
+        return;
+      }
+      submit.disabled = true;
+      label.textContent = T.sending;
+      status.textContent = '';
+      try {
+        const res = await fetch('/api/contact', { method: 'POST', body: new FormData(form) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || T.fail);
+        status.className = 'text-sm font-medium text-accent';
+        status.textContent = T.ok;
+        form.reset();
+        (form.elements.namedItem('ts') as HTMLInputElement).value = String(Date.now());
+      } catch (err) {
+        status.className = 'text-sm font-medium text-red-600 dark:text-red-400';
+        status.textContent = (err as Error).message || T.fail;
+      } finally {
+        submit.disabled = false;
+        label.textContent = T.send;
+      }
+    });
+  }
+
+  // Calendly chỉ nạp khi người dùng bấm (không tải script bên thứ ba khi chưa cần)
+  document.querySelectorAll<HTMLElement>('[data-calendly]').forEach((box) =>
+    box.querySelector('button')?.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.src = `${box.dataset.calendly}?hide_gdpr_banner=1`;
+      f.title = 'Calendly';
+      f.className = 'h-full w-full';
+      box.replaceChildren(f);
+    }),
+  );
+</script>

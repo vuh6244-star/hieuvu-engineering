@@ -1,0 +1,39 @@
+---
+title: Mô phỏng đốt cháy lò hơi — giảm NOx và cân bằng nhiệt buồng lửa
+description: Mô hình CFD buồng lửa lò hơi công nghiệp có đốt cháy, bức xạ nhiệt và hình thành NOx, đối chiếu số đo vận hành để đánh giá phương án điều chỉnh gió cấp hai.
+date: 2026-06-15
+category: energy
+industry: Năng lượng · Nhiệt điện & lò hơi công nghiệp
+art: furnace
+tools: [Simcenter STAR-CCM+, Siemens NX]
+featured: true
+sample: true
+metrics:
+  - label: Giảm NOx tại cửa ra buồng lửa
+    value: "−18%"
+  - label: Sai lệch nhiệt độ so với số đo
+    value: "< 5%"
+  - label: Phương án vận hành
+    value: "4"
+---
+
+## Bài toán
+
+Nhà máy cần giảm nồng độ **NOx** tại cửa ra buồng lửa mà không làm tăng cacbon chưa cháy hay thay đổi lớn về thiết bị. Câu hỏi đặt ra: phân bổ lại lưu lượng **gió cấp hai** giữa các tầng vòi đốt có đủ hiệu quả không?
+
+## Phương pháp
+
+- **Hình học:** buồng lửa, các tầng vòi đốt và đường khói đến bộ quá nhiệt, dựng lại từ bản vẽ trong Siemens NX.
+- **Vật lý:** dòng rối k-ε Realizable, đốt cháy nhiên liệu rắn với mô hình hạt Lagrangian, **bức xạ nhiệt DOM**, mô hình hình thành NOx nhiệt và NOx nhiên liệu.
+- **Kiểm chứng:** hiệu chỉnh mô hình theo **số đo vận hành** của nhà máy (nhiệt độ khói, nồng độ O₂ và NOx) trước khi đánh giá phương án.
+- **Kịch bản:** 4 phương án phân bổ gió cấp hai và góc vòi đốt.
+
+## Kết quả
+
+Phương án dồn gió cấp hai lên tầng trên, tạo vùng cháy thiếu khí ở tầng dưới, giảm NOx tại cửa ra buồng lửa khoảng **18%**. Nhiệt độ khói trước bộ quá nhiệt vẫn nằm trong giới hạn thiết kế. Trường nhiệt độ cũng cho thấy ngọn lửa không còn táp vào tường phía sau như phương án hiện hữu.
+
+## Bài học
+
+Với buồng đốt, mô hình chỉ đáng tin khi **khớp số đo vận hành trước**. Từ mô hình đã kiểm chứng, mỗi phương án được thẩm định trên máy tính trước khi thử tại hiện trường, giúp giảm số lần thử-sai.
+
+> *Lưu ý: đây là nội dung mẫu minh họa. Số liệu sẽ được cập nhật theo dự án thực tế (đã được khách hàng cho phép công bố).*

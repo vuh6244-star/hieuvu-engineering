@@ -1,0 +1,531 @@
+---
+/*
+  Hero "CFD chạy thật trên trình duyệt" — bộ giải Lattice-Boltzmann D2Q9 (BGK), thời gian thực.
+  Không phải hình vẽ: xoáy bong ra, tách dòng, bất ổn Kelvin–Helmholtz… là nghiệm số của Navier–Stokes.
+   1. Dãy xoáy Kármán sau trụ tròn       — vorticity
+   2. Thất tốc cánh NACA 0012 ở 16°       — vorticity
+   3. Khí động học xe — vùng wake          — velocity magnitude
+   4. Bó ống trao đổi nhiệt (so le)        — velocity magnitude
+   5. Tia phun — bất ổn Kelvin–Helmholtz   — vorticity
+  Di chuột/chạm để "khuấy" dòng chảy. Chuyển cảnh bằng các chấm ở đáy hero (tự chuyển sau mỗi 16 giây);
+  bấm vào chấm đang chọn để tạm dừng / chạy tiếp.
+*/
+import { scenes } from '@/lib/lbm';
+interface Props { lang: 'vi' | 'en' }
+const { lang } = Astro.props;
+const T = lang === 'vi'
+  ? { group: 'Chọn cảnh mô phỏng', pauseTip: 'bấm lần nữa để tạm dừng', hint: 'Di chuột để khuấy dòng chảy', live: 'Giải trực tiếp trên trình duyệt' }
+  : { group: 'Choose a simulation', pauseTip: 'click again to pause', hint: 'Move the pointer to stir the flow', live: 'Solved live in your browser' };
+---
+
+<div class="absolute inset-0" data-flow data-lang={lang} data-hint={T.hint} data-live={T.live} data-pause-tip={T.pauseTip}>
+  <div class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700" data-stage>
+    <canvas class="absolute inset-0 h-full w-full" aria-hidden="true" data-field></canvas>
+    <canvas class="absolute inset-0 h-full w-full" aria-hidden="true" data-particles></canvas>
+    <!-- ảnh chụp cảnh cũ, mờ dần khi cảnh mới hiện ra → chuyển cảnh liền mạch -->
+    <canvas class="absolute inset-0 h-full w-full opacity-0" aria-hidden="true" data-overlay></canvas>
+  </div>
+
+  <!-- Chấm chuyển cảnh: chấm đang chọn giãn thành viên thuốc -->
+  <div class="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 md:bottom-7" role="group" aria-label={T.group} data-flow-dots>
+    {
+      scenes.map((sc, i) => (
+        <button type="button" class="flow-dot" data-dot={i} aria-label={`${i + 1}. ${sc.title[lang]}`} title={sc.title[lang]}>
+          <span class="flow-dot-track" />
+        </button>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .flow-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.25rem;
+    min-width: 1.5rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+  }
+  .flow-dot-track {
+    display: block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: rgb(226 232 240 / 0.35);
+    transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s, box-shadow 0.3s;
+  }
+  .flow-dot:hover .flow-dot-track { background: rgb(226 232 240 / 0.65); }
+  .flow-dot[aria-current='true'] .flow-dot-track { width: 1.75rem; background: #3ed6e0; box-shadow: 0 0 10px rgb(62 214 224 / 0.55); }
+  .flow-dot[aria-current='true'][data-paused] .flow-dot-track { background: rgb(62 214 224 / 0.45); box-shadow: none; }
+  .flow-dot:focus-visible { outline: 2px solid #3ed6e0; outline-offset: 2px; }
+</style>
+
+<script>
+  import { inShape, scenes, type CarShape, type SceneDef, type Shape } from '@/lib/lbm';
+  import { CAR_IMG_RATIO, CAR_WHEELS } from '@/lib/carOutline';
+
+  // Ảnh render xe (nền trong suốt) — dùng cho cảnh khí động học xe
+  const carImg = new Image();
+  carImg.decoding = 'async';
+  carImg.src = '/hero/car.webp';
+  const wheelImg = new Image();
+  wheelImg.decoding = 'async';
+  wheelImg.src = '/hero/wheel.webp';
+
+  /* =====================================================================
+     Dải màu (LUT 256)
+     ===================================================================== */
+  type LUT = Uint8ClampedArray;
+  const makeLut = (fn: (t: number) => [number, number, number]): LUT => {
+    const lut = new Uint8ClampedArray(256 * 3);
+    for (let i = 0; i < 256; i++) {
+      const [r, g, b] = fn(i / 255);
+      lut[i * 3] = r * 255; lut[i * 3 + 1] = g * 255; lut[i * 3 + 2] = b * 255;
+    }
+    return lut;
+  };
+  // Phân kỳ cho vorticity trên nền tối: xanh băng ← đen navy → cam lửa
+  const stopsLut = (stops: [number, number[]][]) => makeLut((t) => {
+    let k = 0;
+    while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
+    const [t0, c0] = stops[k];
+    const [t1, c1] = stops[k + 1];
+    const f = Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+    return c0.map((v, i) => (v + (c1[i] - v) * f) / 255) as [number, number, number];
+  });
+  const DIV = stopsLut([
+    [0, [224, 250, 255]], [0.14, [96, 220, 240]], [0.3, [30, 110, 230]], [0.44, [12, 28, 70]], [0.5, [5, 9, 22]],
+    [0.56, [70, 22, 12]], [0.7, [230, 90, 20]], [0.86, [255, 190, 60]], [1, [255, 248, 220]],
+  ]);
+  // Vận tốc: navy (vùng wake) → xanh → cyan → trắng → vàng → cam (vùng tăng tốc)
+  const SPEED = stopsLut([
+    [0, [4, 8, 24]], [0.3, [14, 34, 96]], [0.5, [26, 84, 200]], [0.63, [44, 170, 235]], [0.74, [62, 214, 224]],
+    [0.84, [205, 246, 250]], [0.92, [253, 214, 110]], [1, [245, 120, 20]],
+  ]);
+
+  /* =====================================================================
+     Hiển thị (luồng chính) — 2 Web Worker luân phiên: một worker chạy cảnh hiện tại,
+     worker còn lại tính trước cảnh kế tiếp → chuyển cảnh hòa mờ, không có khoảng đen
+     ===================================================================== */
+  const host = document.querySelector<HTMLElement>('[data-flow]');
+  const stage = host?.querySelector<HTMLElement>('[data-stage]');
+  const fieldCv = host?.querySelector<HTMLCanvasElement>('[data-field]');
+  const partCv = host?.querySelector<HTMLCanvasElement>('[data-particles]');
+  const overCv = host?.querySelector<HTMLCanvasElement>('[data-overlay]');
+  const fctx = fieldCv?.getContext('2d');
+  const pctx = partCv?.getContext('2d');
+  const octx = overCv?.getContext('2d');
+
+  if (host && stage && fieldCv && partCv && overCv && fctx && pctx && octx && 'Worker' in window) {
+    const section = host.parentElement as HTMLElement;
+    const lang = (host.dataset.lang ?? 'vi') as 'vi' | 'en';
+    const dots = Array.from(host.querySelectorAll<HTMLButtonElement>('[data-dot]'));
+    const makeWorker = () => new Worker(new URL('../lib/lbm.worker.ts', import.meta.url), { type: 'module' });
+    const workers = [makeWorker(), makeWorker()];
+
+    let W = 0, H = 0, dpr = 1, cell = 6, mobile = false;
+    let Nx = 0, Ny = 0;
+    // trạng thái cảnh đang hiển thị
+    let def: SceneDef = scenes[0];
+    let shapes: Shape[] = [];
+    let solid: Uint8Array = new Uint8Array(0);
+    let groundY = 0;
+    let ux: Float32Array = new Float32Array(0), uy: Float32Array = new Float32Array(0);
+    let hasFrame = false, pendingDelta = 0, steps = 0;
+    let idx = 0, gen = 0, wi = 0;
+    let playing = true, visible = true;
+    let vortScale = 0.02;
+    let sceneStart = performance.now();
+    const SCENE_MS = 16000, PREWARM_MS = 4000;
+    // Bánh xe quay mượt: quãng đường mặt đường đã chạy (ô lưới), tăng đều theo tốc độ mô phỏng đã làm mượt
+    let wheelDist = 0, simRate = 0, lastMsgT = 0, lastDrawT = 0;
+    const off = document.createElement('canvas');
+    let img: ImageData | null = null;
+    let source: { x0: number; x1: number; y0: number; y1: number } | null = null;
+
+    type Prep = {
+      idx: number; gen: number; wi: number; def: SceneDef; shapes: Shape[]; solid: Uint8Array; groundY: number;
+      source: { x0: number; x1: number; y0: number; y1: number } | null; vortScale: number;
+      ready: boolean; ux?: Float32Array; uy?: Float32Array; steps: number;
+    };
+    let next: Prep | null = null;
+    let wantNext = false; // đã tới lúc chuyển nhưng cảnh kế tiếp chưa sẵn sàng
+
+    // Hạt đánh dấu (đơn vị ô lưới)
+    const NP = 650;
+    const ppx = new Float32Array(NP), ppy = new Float32Array(NP), page = new Float32Array(NP);
+    const spawnP = (k: number, edge: boolean) => {
+      if (source && Math.random() < 0.8) { ppx[k] = source.x1 + 1 + Math.random() * 2; ppy[k] = source.y0 + Math.random() * (source.y1 - source.y0); }
+      else { ppx[k] = edge ? 1 + Math.random() * 3 : 1 + Math.random() * (Nx - 2); ppy[k] = 1 + Math.random() * (Ny - 2); }
+      page[k] = Math.random() * 400;
+    };
+
+    /** Đo khung & dựng lưới (dùng chung cho mọi cảnh) */
+    const measure = () => {
+      const rect = section.getBoundingClientRect();
+      if (!(rect.width > 40 && rect.height > 40)) return false;
+      W = rect.width; H = rect.height;
+      mobile = W < 768;
+      dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      for (const cv of [fieldCv, partCv, overCv]) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+      const targetCells = mobile ? 18000 : 30000;
+      cell = Math.max(3, Math.sqrt((W * H) / targetCells));
+      Nx = Math.max(60, Math.round(W / cell) || 60); Ny = Math.max(40, Math.round(H / cell) || 40);
+      off.width = Nx; off.height = Ny;
+      img = off.getContext('2d')!.createImageData(Nx, Ny);
+      return true;
+    };
+
+    /** Chuẩn bị một cảnh trên worker k (worker tự chạy khởi động; play = chạy tiếp sau khởi động) */
+    const prepare = (i: number, k: number, play: boolean): Prep => {
+      const d = scenes[i];
+      const geo = d.geometry(Nx, Ny, mobile);
+      const gY = geo.groundY ?? 0;
+      const sol = new Uint8Array(Nx * Ny);
+      for (let y = 1; y < Ny - 1; y++) for (let x = 1; x < Nx - 1; x++) {
+        let v = gY > 0 && y >= gY;
+        if (!v) for (const sh of geo.shapes) if (inShape(sh, x + 0.5, y + 0.5)) { v = true; break; }
+        if (v) sol[y * Nx + x] = 1;
+      }
+      const g = ++gen;
+      workers[k].postMessage({ type: 'init', gen: g, scene: i, Nx, Ny, mobile, playing: play, warm: Math.round(0.3 * (Nx / Math.max(d.u0, 0.08))) });
+      return { idx: i, gen: g, wi: k, def: d, shapes: geo.shapes, solid: sol, groundY: gY, source: geo.source ?? null, vortScale: (0.6 * d.u0) / Math.max(6, geo.L * 0.5), ready: false, steps: 0 };
+    };
+
+    let curGen = 0;
+    /** Đưa cảnh đã chuẩn bị lên màn hình */
+    const activate = (pr: Prep) => {
+      idx = pr.idx; def = pr.def; shapes = pr.shapes; solid = pr.solid; groundY = pr.groundY; source = pr.source;
+      vortScale = pr.vortScale; curGen = pr.gen; wi = pr.wi;
+      hasFrame = pr.ready; steps = pr.steps; pendingDelta = 0;
+      if (pr.ux && pr.uy) { ux = pr.ux; uy = pr.uy; }
+      for (let k = 0; k < NP; k++) spawnP(k, false);
+      pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      pctx.clearRect(0, 0, W, H);
+      sceneStart = performance.now();
+      syncDots();
+    };
+
+    /** Hòa mờ từ cảnh hiện tại sang cảnh đã tính sẵn */
+    const crossfade = (pr: Prep) => {
+      // chụp khung hình hiện tại lên lớp phủ
+      octx.setTransform(1, 0, 0, 1, 0, 0);
+      octx.clearRect(0, 0, overCv.width, overCv.height);
+      octx.drawImage(fieldCv, 0, 0);
+      octx.drawImage(partCv, 0, 0);
+      overCv.style.transition = 'none';
+      overCv.style.opacity = '1';
+      const old = wi;
+      activate(pr);
+      render();
+      workers[old].postMessage({ type: 'pause' });
+      syncWorker();
+      workers[wi].postMessage({ type: 'ack' });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        overCv.style.transition = 'opacity 1.1s ease';
+        overCv.style.opacity = '0';
+      }));
+      next = null;
+      wantNext = false;
+    };
+
+    /** Chuyển tới cảnh i: dùng cảnh đã tính sẵn nếu có, nếu chưa thì tính ngay trên worker rảnh */
+    const goTo = (i: number) => {
+      i = (i + scenes.length) % scenes.length;
+      if (i === idx && !wantNext) return;
+      if (!next || next.idx !== i) next = prepare(i, 1 - wi, false);
+      if (next.ready) crossfade(next);
+      else { wantNext = true; idxTarget = i; syncDots(); }
+    };
+    let idxTarget = -1;
+
+    const onMessage = (k: number) => (e: MessageEvent) => {
+      const m = e.data;
+      if (next && m.gen === next.gen && k === next.wi) {
+        if (m.type === 'frame') {
+          next.ux = m.ux; next.uy = m.uy; next.steps = m.steps; next.ready = true;
+          if (wantNext) crossfade(next);
+        } else if (m.type === 'unstable') next = prepare(next.idx, k, false);
+        return;
+      }
+      if (m.gen !== curGen || k !== wi) return; // khung cũ
+      if (m.type === 'unstable') { activate(prepare(idx, wi, playing && visible)); return; }
+      ux = m.ux; uy = m.uy; steps = m.steps; pendingDelta += m.delta;
+      // tốc độ mô phỏng (bước/giây), làm mượt để bánh xe quay đều
+      const tNow = performance.now();
+      if (lastMsgT && m.delta > 0) { const inst = (m.delta * 1000) / Math.max(1, tNow - lastMsgT); simRate = simRate ? simRate * 0.92 + inst * 0.08 : inst; }
+      lastMsgT = tNow;
+      const first = !hasFrame;
+      hasFrame = true;
+      if (first) { render(); stage.style.opacity = '1'; sceneStart = performance.now(); pendingDelta = 0; }
+      workers[k].postMessage({ type: 'ack' }); // nhận ngay — không phụ thuộc requestAnimationFrame
+    };
+    workers.forEach((w, k) => (w.onmessage = onMessage(k)));
+
+    /** Vẽ xe bằng ảnh render thật, đặt khớp đúng đường bao mà bộ giải dùng */
+    const drawCar = (c: CarShape) => {
+      const L = c.len * cell, x = c.x0 * cell, yGround = c.yG * cell, h = CAR_IMG_RATIO * L;
+      // bóng tiếp đất dưới gầm
+      const cx = x + L * 0.5;
+      const sh = fctx.createRadialGradient(cx, yGround, 0, cx, yGround, L * 0.55);
+      sh.addColorStop(0, 'rgba(0,0,0,0.6)');
+      sh.addColorStop(1, 'rgba(0,0,0,0)');
+      fctx.fillStyle = sh;
+      fctx.beginPath();
+      fctx.ellipse(cx, yGround + 1, L * 0.55, L * 0.03, 0, 0, Math.PI * 2);
+      fctx.fill();
+      if (carImg.complete && carImg.naturalWidth > 0) {
+        fctx.imageSmoothingQuality = 'high';
+        fctx.drawImage(carImg, x, yGround - h, L, h);
+        // Bánh xe quay theo mặt đường chuyển động: ω = U / r (đơn vị lưới → đúng tốc độ dòng)
+        if (wheelImg.complete && wheelImg.naturalWidth > 0) {
+          for (const [wx, wy, wr] of CAR_WHEELS) {
+            const R = wr * L;
+            const ang = -wheelDist / (wr * c.len); // mặt đường chạy về sau → bánh quay ngược chiều kim đồng hồ
+            fctx.save();
+            fctx.translate(x + wx * L, yGround - wy * L);
+            fctx.rotate(ang);
+            fctx.drawImage(wheelImg, -R - 0.5, -R - 0.5, 2 * R + 1, 2 * R + 1);
+            fctx.restore();
+          }
+        }
+      } else {
+        // ảnh chưa tải xong → tạm vẽ khối xám theo đường bao
+        fctx.beginPath();
+        c.body.forEach(([px, py], k) => (k ? fctx.lineTo(px * cell, py * cell) : fctx.moveTo(px * cell, py * cell)));
+        fctx.closePath();
+        fctx.fillStyle = '#2a313d';
+        fctx.fill();
+      }
+    };
+
+    const render = () => {
+      if (!img || !hasFrame) return;
+      const data = img.data;
+      const isV = def.field === 'vort';
+      const lut = isV ? DIV : SPEED;
+      const sMax = def.u0 * (def.speedScale ?? 1.6);
+      let vmax = 0;
+      for (let y = 0; y < Ny; y++) {
+        for (let x = 0; x < Nx; x++) {
+          const i = y * Nx + x, o = i * 4;
+          if (solid[i]) { data[o + 3] = 0; continue; }
+          let t: number;
+          if (isV) {
+            if (x === 0 || y === 0 || x === Nx - 1 || y === Ny - 1) t = 0.5;
+            else {
+              const w = uy[i + 1] - uy[i - 1] - (ux[i + Nx] - ux[i - Nx]);
+              const aw = Math.abs(w);
+              if (aw > vmax) vmax = aw;
+              t = 0.5 + 0.5 * Math.tanh(w / vortScale);
+            }
+          } else {
+            t = Math.min(1, Math.sqrt(ux[i] * ux[i] + uy[i] * uy[i]) / sMax);
+          }
+          const k = Math.round(t * 255) * 3;
+          data[o] = lut[k]; data[o + 1] = lut[k + 1]; data[o + 2] = lut[k + 2]; data[o + 3] = 255;
+        }
+      }
+      if (isV && vmax > 0) vortScale += (0.62 * vmax - vortScale) * 0.05; // tự co giãn thang màu
+      off.getContext('2d')!.putImageData(img, 0, 0);
+      fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fctx.clearRect(0, 0, W, H);
+      fctx.imageSmoothingEnabled = true;
+      fctx.imageSmoothingQuality = 'high';
+      fctx.globalAlpha = 1;
+      fctx.drawImage(off, 0, 0, Nx * cell, Ny * cell);
+      fctx.globalAlpha = 1;
+
+      // Vật thể: hình học kim loại mờ (như geometry trong phần mềm CFD), bóng đổ nhẹ, không phát sáng
+      const sx = (x: number) => x * cell, sy = (y: number) => y * cell;
+      fctx.save();
+      if (groundY) {
+        const gy = sy(groundY);
+        const gg = fctx.createLinearGradient(0, gy, 0, H);
+        gg.addColorStop(0, '#151b26'); gg.addColorStop(1, '#080b12');
+        fctx.fillStyle = gg;
+        fctx.fillRect(0, gy, W, H - gy);
+        fctx.fillStyle = 'rgba(148,163,184,0.35)';
+        fctx.fillRect(0, gy, W, 1);
+      }
+      for (const s of shapes) {
+        if (s.kind === 'car') { drawCar(s); continue; }
+        if (s.kind === 'rect' && s.hidden) continue;
+        if (s.kind === 'grille') {
+          // miệng gió hồi: các khe nan ngang trên tường
+          const x = sx(s.x) - 2, y = sy(s.y), h = s.h * cell;
+          fctx.fillStyle = '#8b94a4';
+          fctx.fillRect(x - 2, y, 4, h);
+          fctx.fillStyle = 'rgba(10,14,20,0.9)';
+          for (let k = 2; k < h - 1; k += 4) fctx.fillRect(x - 2, y + k, 4, 1.5);
+          continue;
+        }
+        if (s.kind === 'frame') {
+          // Tường, trần, sàn: dải kim loại mờ, mép trong sáng nhẹ
+          const t = s.t * cell, x = sx(s.x), y = sy(s.y), w = s.w * cell, h = s.h * cell;
+          fctx.fillStyle = '#2b3342';
+          fctx.fillRect(x, y, w, t); fctx.fillRect(x, y + h - t, w, t);
+          fctx.fillRect(x, y, t, h); fctx.fillRect(x + w - t, y, t, h);
+          fctx.strokeStyle = 'rgba(226,232,240,0.35)';
+          fctx.lineWidth = 1;
+          fctx.strokeRect(x + t, y + t, w - 2 * t, h - 2 * t);
+          fctx.strokeStyle = 'rgba(226,232,240,0.15)';
+          fctx.strokeRect(x, y, w, h);
+          continue;
+        }
+        fctx.beginPath();
+        if (s.kind === 'circle') fctx.arc(sx(s.x), sy(s.y), s.r * cell, 0, Math.PI * 2);
+        else if (s.kind === 'rect') fctx.rect(sx(s.x), sy(s.y), s.w * cell, s.h * cell);
+        else s.pts.forEach(([x, y], k) => (k ? fctx.lineTo(sx(x), sy(y)) : fctx.moveTo(sx(x), sy(y))));
+        fctx.closePath();
+        if (s.kind === 'circle') {
+          // ống/trụ thép: sáng ở phía trên-trái
+          const cxp = sx(s.x), cyp = sy(s.y), r = s.r * cell;
+          const gr = fctx.createRadialGradient(cxp - r * 0.35, cyp - r * 0.4, r * 0.1, cxp, cyp, r);
+          if (s.hot) { gr.addColorStop(0, '#8a7a6a'); gr.addColorStop(0.55, '#4a3f38'); gr.addColorStop(1, '#1e1b1c'); }
+          else { gr.addColorStop(0, '#6b7486'); gr.addColorStop(0.55, '#353d4c'); gr.addColorStop(1, '#161b24'); }
+          fctx.fillStyle = gr;
+        } else {
+          let b0 = sy(Ny * 0.4), b1 = sy(Ny * 0.6);
+          if (s.kind === 'rect') { b0 = sy(s.y); b1 = sy(s.y + s.h); }
+          else { const ys = s.pts.map((q) => q[1]); b0 = sy(Math.min(...ys)); b1 = sy(Math.max(...ys)); }
+          const gr = fctx.createLinearGradient(0, b0, 0, Math.max(b0 + 1, b1));
+          if (s.tone === 'light') { gr.addColorStop(0, '#c3cad6'); gr.addColorStop(0.6, '#8b94a4'); gr.addColorStop(1, '#5d6676'); }
+          else if (s.tone === 'person') { gr.addColorStop(0, '#7d8697'); gr.addColorStop(0.35, '#566072'); gr.addColorStop(1, '#262d3a'); }
+          else { gr.addColorStop(0, '#5a6477'); gr.addColorStop(0.5, '#323a49'); gr.addColorStop(1, '#161b24'); }
+          fctx.fillStyle = gr;
+        }
+        fctx.shadowColor = 'rgba(0,0,0,0.45)';
+        fctx.shadowBlur = 10;
+        fctx.shadowOffsetY = 2;
+        fctx.fill();
+        fctx.shadowBlur = 0;
+        fctx.shadowOffsetY = 0;
+        fctx.lineWidth = 1;
+        fctx.strokeStyle = 'rgba(226,232,240,0.4)';
+        fctx.stroke();
+      }
+      fctx.restore();
+    };
+
+    const sample = (x: number, y: number): [number, number] | null => {
+      const x0 = Math.floor(x), y0 = Math.floor(y);
+      if (x0 < 1 || y0 < 1 || x0 >= Nx - 2 || y0 >= Ny - 2) return null;
+      const i = y0 * Nx + x0;
+      if (solid[i]) return null;
+      const fx = x - x0, fy = y - y0;
+      const a = (1 - fx) * (1 - fy), b = fx * (1 - fy), c = (1 - fx) * fy, d = fx * fy;
+      return [ux[i] * a + ux[i + 1] * b + ux[i + Nx] * c + ux[i + Nx + 1] * d, uy[i] * a + uy[i + 1] * b + uy[i + Nx] * c + uy[i + Nx + 1] * d];
+    };
+
+    const drawParticles = (dsteps: number) => {
+      pctx.globalCompositeOperation = 'destination-out';
+      pctx.fillStyle = 'rgba(0,0,0,0.08)';
+      pctx.fillRect(0, 0, W, H);
+      pctx.globalCompositeOperation = 'lighter';
+      pctx.strokeStyle = "rgba(235,248,255,0.32)";
+      pctx.lineWidth = 1.1;
+      pctx.lineCap = 'round';
+      pctx.beginPath();
+      const n = Math.min(dsteps, 40);
+      for (let k = 0; k < NP; k++) {
+        const v = sample(ppx[k], ppy[k]);
+        if (!v || page[k] > 700) { spawnP(k, true); page[k] = 0; continue; }
+        const x0 = ppx[k], y0 = ppy[k];
+        ppx[k] += v[0] * n; ppy[k] += v[1] * n; page[k]++;
+        if (Math.abs(v[0]) + Math.abs(v[1]) < 0.012) continue;
+        pctx.moveTo(x0 * cell, y0 * cell);
+        pctx.lineTo(ppx[k] * cell, ppy[k] * cell);
+      }
+      pctx.stroke();
+      pctx.globalCompositeOperation = 'source-over';
+    };
+
+    // Vòng vẽ
+    const draw = () => {
+      requestAnimationFrame(draw);
+      const now = performance.now();
+      const dtMs = lastDrawT ? Math.min(100, now - lastDrawT) : 0;
+      lastDrawT = now;
+      if (!playing || !visible || !hasFrame) return;
+      wheelDist += (simRate * def.u0 * dtMs) / 1000;
+      const t = now - sceneStart;
+      // tính trước cảnh kế tiếp ở worker còn lại
+      if (!next && t > SCENE_MS - PREWARM_MS) next = prepare((idx + 1) % scenes.length, 1 - wi, false);
+      if (t > SCENE_MS && !wantNext) goTo(idx + 1);
+      if (pendingDelta === 0 && !groundY) return; // cảnh xe: vẽ mỗi khung để bánh quay mượt
+      render();
+      drawParticles(pendingDelta);
+      pendingDelta = 0;
+    };
+
+    const syncWorker = () => workers[wi].postMessage({ type: playing && visible && !document.hidden ? 'play' : 'pause' });
+    /** Chấm đang chọn giãn ra; khi tạm dừng thì mờ đi */
+    function syncDots() {
+      const active = wantNext && idxTarget >= 0 ? idxTarget : idx;
+      dots.forEach((d, i) => {
+        const on = i === active;
+        d.setAttribute('aria-current', String(on));
+        d.toggleAttribute('data-paused', on && !playing);
+        d.title = on && playing && host!.dataset.pauseTip ? `${scenes[i].title[lang]} — ${host!.dataset.pauseTip}` : scenes[i].title[lang];
+      });
+    }
+    dots.forEach((d, i) => d.addEventListener('click', () => {
+      if (i !== idx) { if (!playing) { playing = true; syncWorker(); } goTo(i); return; }
+      // bấm chấm đang chọn → tạm dừng / chạy tiếp
+      playing = !playing;
+      if (!playing) pctx.clearRect(0, 0, W, H);
+      else sceneStart = performance.now();
+      syncDots();
+      syncWorker();
+    }));
+
+    // Khuấy dòng bằng chuột/chạm
+    let lastP: { x: number; y: number; t: number } | null = null;
+    section.addEventListener('pointermove', (e) => {
+      if (!playing || !hasFrame) return;
+      const r = section.getBoundingClientRect();
+      const x = (e.clientX - r.left) / cell, y = (e.clientY - r.top) / cell;
+      const now = performance.now();
+      if (lastP) {
+        const dtSteps = Math.max(1, ((now - lastP.t) / 16.7) * 6);
+        let u = (x - lastP.x) / dtSteps, v = (y - lastP.y) / dtSteps;
+        const m = Math.hypot(u, v);
+        if (m > 0.15) { u *= 0.15 / m; v *= 0.15 / m; }
+        if (m > 0.002) workers[wi].postMessage({ type: 'stir', x, y, u: u + def.u0 * 0.5, v });
+      }
+      lastP = { x, y, t: now };
+    }, { passive: true });
+    section.addEventListener('pointerleave', () => { lastP = null; });
+
+    if (import.meta.env.DEV) (window as any).__flow = { get idx() { return idx; }, get hasFrame() { return hasFrame; }, get steps() { return steps; }, get next() { return next && { idx: next.idx, ready: next.ready }; } };
+
+    // Khởi chạy sau khi trang đã tải
+    const start = () => {
+      if (!measure()) { window.setTimeout(start, 200); return; }
+      activate(prepare(0, 0, true));
+      requestAnimationFrame(draw);
+    };
+    if ('requestIdleCallback' in window) (window as any).requestIdleCallback(start, { timeout: 800 });
+    else setTimeout(start, 200);
+
+    // Đổi kích thước đáng kể → dựng lại cảnh hiện tại
+    let rTimer = 0;
+    new ResizeObserver(() => {
+      clearTimeout(rTimer);
+      rTimer = window.setTimeout(() => {
+        const r = section.getBoundingClientRect();
+        if (!W || (Math.abs(r.width - W) < 48 && Math.abs(r.height - H) < 80)) return;
+        if (!measure()) return;
+        next = null; wantNext = false;
+        stage.style.opacity = '0';
+        activate(prepare(idx, wi, playing && visible));
+      }, 300);
+    }).observe(section);
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; syncWorker(); }, { threshold: 0.02 }).observe(section);
+    document.addEventListener('visibilitychange', syncWorker);
+  }
+</script>
+

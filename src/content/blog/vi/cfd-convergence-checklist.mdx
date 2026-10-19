@@ -1,0 +1,45 @@
+---
+title: "5 bước kiểm tra hội tụ cho mô phỏng CFD — đừng chỉ nhìn residual"
+description: Residual giảm 3 bậc chưa chắc mô phỏng đã hội tụ. Checklist 5 bước giúp bạn tự tin với kết quả CFD trước khi báo cáo.
+date: 2026-08-28
+category: tips
+tags: [convergence, residuals, monitors, mesh independence]
+art: pump
+sample: true
+---
+
+"Residual đã xuống 1e-4 rồi, kết quả dùng được chưa anh?" — đây là câu hỏi mình nhận được nhiều nhất từ các bạn mới học CFD. Câu trả lời ngắn: **chưa chắc**. Dưới đây là checklist 5 bước mình áp dụng cho mọi dự án.
+
+## 1. Residual — điều kiện cần, không phải điều kiện đủ
+
+Residual đo mức "mất cân bằng" của phương trình rời rạc, và được chuẩn hóa khác nhau tùy phần mềm. Trong STAR-CCM+, residual mặc định được chuẩn hóa theo các vòng lặp đầu tiên, nên **giảm 3–4 bậc** là dấu hiệu tốt nhưng không tuyệt đối.
+
+Điều cần tránh: residual **đi ngang hoặc dao động có chu kỳ**. Đó thường là dấu hiệu dòng chảy thực chất không ổn định (ví dụ xoáy Kármán sau vật cản) — khi đó nên chuyển sang mô phỏng không dừng.
+
+## 2. Theo dõi đại lượng kỹ thuật (monitor)
+
+Đại lượng bạn thực sự quan tâm — lực cản, cột áp, nhiệt độ cực đại — phải **phẳng** theo số vòng lặp. Trong STAR-CCM+, tạo *Report* → *Monitor* → *Plot* cho từng đại lượng ngay từ đầu.
+
+Mẹo: thêm **Asymptotic Stopping Criterion** cho monitor quan trọng — ví dụ dao động dưới 0.1% trong 200 vòng lặp cuối.
+
+## 3. Cân bằng khối lượng và năng lượng
+
+Tổng lưu lượng khối lượng vào phải bằng tổng ra (sai lệch thường < 0.1%). Với bài toán nhiệt, tổng nhiệt sinh ra phải bằng tổng nhiệt thoát qua biên. Một report đơn giản *Mass Flow* trên các biên inlet/outlet giúp phát hiện lỗi thiết lập rất nhanh.
+
+## 4. Độc lập lưới (mesh independence)
+
+Chạy ít nhất **3 mức lưới** với tỉ lệ làm mịn ổn định (ví dụ hệ số 1.5 theo kích thước ô). Kết quả đáng tin khi thay đổi giữa hai mức mịn nhất nhỏ hơn mức sai số bạn chấp nhận. Phương pháp **GCI (Grid Convergence Index)** giúp định lượng điều này một cách chuẩn mực.
+
+## 5. Đối chiếu vật lý và thực nghiệm
+
+Cuối cùng, hãy tự hỏi: *kết quả có hợp lý về mặt vật lý không?* Đối chiếu với công thức kinh nghiệm, dữ liệu nhà sản xuất hoặc thử nghiệm nếu có. Một mô phỏng hội tụ hoàn hảo vẫn có thể **sai vì điều kiện biên sai**.
+
+## Tóm tắt checklist
+
+1. Residual giảm ổn định, không dao động có chu kỳ.
+2. Monitor đại lượng kỹ thuật phẳng.
+3. Cân bằng khối lượng/năng lượng < 0.1–0.5%.
+4. Kết quả độc lập lưới (3 mức, có GCI nếu được).
+5. Kết quả hợp lý về vật lý và khớp dữ liệu tham chiếu.
+
+Lưu lại checklist này và áp dụng trước mỗi lần báo cáo — khách hàng sẽ tin tưởng kết quả của bạn hơn nhiều.

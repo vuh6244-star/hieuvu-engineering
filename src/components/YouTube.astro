@@ -1,0 +1,28 @@
+---
+/* Video YouTube tải khi bấm (giữ trang nhẹ, không nạp iframe/cookie trước) */
+interface Props { id: string; title: string }
+const { id, title } = Astro.props;
+---
+
+<div class="relative aspect-video overflow-hidden rounded-2xl border border-line bg-ink" data-yt={id}>
+  <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover opacity-80" />
+  <button type="button" class="absolute inset-0 flex items-center justify-center" aria-label={`Play: ${title}`}>
+    <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-cyan text-[#04121a] shadow-lg transition-transform hover:scale-110">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+    </span>
+  </button>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-yt]').forEach((el) =>
+    el.querySelector('button')?.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.src = `https://www.youtube-nocookie.com/embed/${el.dataset.yt}?autoplay=1&rel=0`;
+      f.title = el.querySelector('button')?.getAttribute('aria-label') ?? 'YouTube video';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      f.allowFullscreen = true;
+      f.className = 'absolute inset-0 h-full w-full';
+      el.replaceChildren(f);
+    }),
+  );
+</script>

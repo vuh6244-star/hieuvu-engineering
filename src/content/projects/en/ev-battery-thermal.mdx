@@ -1,0 +1,35 @@
+---
+title: EV battery pack thermal management (BTMS)
+description: Co-simulation of Simcenter STAR-CCM+ and Simcenter Amesim to assess cell-to-cell temperature spread during fast charging and optimise the cold plate.
+date: 2025-11-08
+category: thermal
+industry: E-Mobility
+art: battery
+tools: [Simcenter STAR-CCM+, Simcenter Amesim]
+sample: true
+metrics:
+  - label: Cell-to-cell temperature spread
+    value: "8 → 4.2 °C"
+  - label: Simulation
+    value: "3D + 1D"
+---
+
+## Challenge
+
+During **fast charging**, large temperature differences between cells accelerate uneven ageing. The goal was to keep the spread below 5 °C without a significant increase in coolant-loop pressure drop.
+
+## Approach
+
+- 3D **conjugate heat transfer (CHT)** model of cells, cold plate and coolant in Simcenter STAR-CCM+.
+- Coolant loop and pump control strategy modelled in 1D with **Simcenter Amesim**, coupled to the 3D model.
+- Three channel layouts evaluated: parallel, serpentine and branched.
+
+## Outcome
+
+The **branched channel** layout reduced the cell-to-cell temperature spread from about **8 °C to 4.2 °C** over the fast-charge cycle, with a negligible pressure-drop penalty.
+
+## Lessons learned
+
+Combining **detailed 3D with 1D system models** makes it possible to evaluate long duty cycles while keeping local accuracy — a key strength of the Simcenter portfolio.
+
+> *Note: this is illustrative sample content. Figures will be updated with real project data.*

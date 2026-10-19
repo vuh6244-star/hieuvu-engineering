@@ -1,0 +1,58 @@
+---
+/*
+  Google Analytics 4 — chỉ nạp khi:
+  1) Có biến môi trường PUBLIC_GA_ID (vd. G-XXXXXXX) lúc build, và
+  2) Người xem bấm "Đồng ý" trên banner cookie (Consent Mode v2, mặc định từ chối).
+*/
+import type { Lang } from '@/i18n/ui';
+interface Props { lang: Lang }
+const gaId = import.meta.env.PUBLIC_GA_ID;
+const { lang } = Astro.props;
+const text = lang === 'vi'
+  ? { msg: 'Website dùng cookie phân tích (Google Analytics) để cải thiện nội dung. Bạn có đồng ý?', yes: 'Đồng ý', no: 'Từ chối' }
+  : { msg: 'This site uses analytics cookies (Google Analytics) to improve its content. Do you agree?', yes: 'Accept', no: 'Decline' };
+---
+
+{
+  gaId && (
+    <>
+      <script is:inline define:vars={{ gaId }}>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        window.gtag = gtag;
+        var c = null;
+        try { c = localStorage.getItem('consent'); } catch (e) {}
+        gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: c === 'granted' ? 'granted' : 'denied' });
+        gtag('js', new Date());
+        gtag('config', gaId, { anonymize_ip: true });
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+        document.head.appendChild(s);
+        window.__consentPending = c === null;
+      </script>
+      <div id="consent" hidden class="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-xl rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow)] md:bottom-6">
+        <p class="text-sm text-fg-soft">{text.msg}</p>
+        <div class="mt-3 flex justify-end gap-2">
+          <button type="button" class="btn btn-ghost !min-h-10 !py-2 !text-sm" data-consent="denied">{text.no}</button>
+          <button type="button" class="btn btn-dark !min-h-10 !py-2 !text-sm" data-consent="granted">{text.yes}</button>
+        </div>
+      </div>
+      <script is:inline>
+        (function () {
+          var box = document.getElementById('consent');
+          if (!box || !window.__consentPending) return;
+          box.hidden = false;
+          box.querySelectorAll('[data-consent]').forEach(function (b) {
+            b.addEventListener('click', function () {
+              var v = b.getAttribute('data-consent');
+              try { localStorage.setItem('consent', v); } catch (e) {}
+              window.gtag('consent', 'update', { analytics_storage: v });
+              box.hidden = true;
+            });
+          });
+        })();
+      </script>
+    </>
+  )
+}

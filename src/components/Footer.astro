@@ -1,0 +1,106 @@
+---
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import { site, socials } from '@/data/site';
+import { localize, useTranslations, type Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+const nav = [
+  { href: '/about', label: t('nav.about') },
+  { href: '/projects', label: t('nav.projects') },
+  { href: '/blog', label: t('nav.blog') },
+  { href: '/contact', label: t('nav.contact') },
+];
+---
+
+<footer class="relative mt-8 border-t border-line bg-surface">
+  <div class="hairline absolute inset-x-0 top-0"></div>
+  <div class="container-x grid gap-12 py-14 md:grid-cols-12 md:py-20">
+    <div class="md:col-span-5">
+      <Logo variant="full" height={52} />
+      <p class="mt-5 max-w-sm text-muted">{t('footer.tagline')}</p>
+      <ul class="mt-6 flex flex-wrap gap-2">
+        {
+          socials.map((s) => (
+            <li>
+              <a
+                href={s.href}
+                target="_blank"
+                rel="noopener"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent"
+                aria-label={s.label}
+                title={s.label}
+              >
+                <Icon name={s.id} size={18} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <nav class="md:col-span-3" aria-label={t('footer.explore')}>
+      <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t('footer.explore')}</h2>
+      <ul class="mt-4 space-y-2.5">
+        {nav.map((l) => <li><a href={localize(l.href, lang)} class="text-fg-soft transition-colors hover:text-accent">{l.label}</a></li>)}
+        <li><a href={site.cvUrl} class="text-fg-soft transition-colors hover:text-accent" download>{t('common.downloadCv')}</a></li>
+      </ul>
+    </nav>
+
+    <div class="md:col-span-4">
+      <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t('footer.newsletter')}</h2>
+      <p class="mt-4 text-sm text-muted">{t('footer.newsletterDesc')}</p>
+      <form class="mt-4 flex gap-2" data-newsletter novalidate>
+        <label for="nl-email" class="sr-only">{t('footer.emailPlaceholder')}</label>
+        <input id="nl-email" name="email" type="email" required autocomplete="email" placeholder={t('footer.emailPlaceholder')} class="field !rounded-full" />
+        <input type="text" name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+        <input type="hidden" name="lang" value={lang} />
+        <button type="submit" class="btn btn-dark shrink-0">{t('footer.subscribe')}</button>
+      </form>
+      <p class="mt-2 min-h-5 text-sm" role="status" aria-live="polite" data-newsletter-status data-ok={t('footer.subscribed')}></p>
+      <a href={`mailto:${site.email}`} class="mt-4 inline-flex items-center gap-2 text-sm text-fg-soft hover:text-accent">
+        <Icon name="mail" size={16} /> {site.email}
+      </a>
+    </div>
+  </div>
+  <div class="border-t border-line">
+    <div class="container-x flex flex-col gap-2 py-6 text-sm text-muted md:flex-row md:items-center md:justify-between">
+      <p>© {year} {site.brand}. {t('footer.rights')}</p>
+      <p class="font-mono text-xs">
+        {lang === 'vi' ? 'Kỹ sư R&D tại' : 'R&D Engineer at'} <a href={site.companyUrl[lang]} target="_blank" rel="noopener" class="text-fg-soft underline-offset-4 hover:text-accent hover:underline">{site.company}</a> · Simcenter STAR-CCM+
+      </p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-newsletter]').forEach((form) => {
+    const status = form.parentElement?.querySelector<HTMLElement>('[data-newsletter-status]');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = form.elements.namedItem('email') as HTMLInputElement;
+      if (!input.checkValidity()) {
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+        return;
+      }
+      input.removeAttribute('aria-invalid');
+      const btn = form.querySelector('button')!;
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/newsletter', { method: 'POST', body: new FormData(form) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        if (status) { status.textContent = status.dataset.ok ?? 'OK'; status.className = 'mt-2 min-h-5 text-sm text-accent'; }
+        form.reset();
+      } catch (err) {
+        if (status) { status.textContent = (err as Error).message; status.className = 'mt-2 min-h-5 text-sm text-red-600 dark:text-red-400'; }
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+</script>

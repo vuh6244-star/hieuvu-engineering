@@ -1,0 +1,63 @@
+---
+title: "y+ là gì? Cách chọn chiều dày lớp lưới biên trong Simcenter STAR-CCM+"
+description: Giải thích y+ dễ hiểu, khi nào cần y+ ≈ 1 hay 30–100, và cách tính chiều dày lớp prism đầu tiên — kèm máy tính y+ trực tuyến.
+date: 2026-09-20
+category: tutorial
+tags: [y+, prism layer, mesh, STAR-CCM+, turbulence]
+art: airfoil
+sample: true
+---
+import YPlusCalculator from '@/components/YPlusCalculator.astro';
+
+Nếu bạn từng thấy lực cản tính ra lệch 20–30% so với thực nghiệm dù lưới "trông rất mịn", rất có thể nguyên nhân nằm ở **lớp lưới sát tường**. Bài viết này giải thích y+ là gì, cách chọn giá trị y+ phù hợp và cách thiết lập *prism layer* trong Simcenter STAR-CCM+.
+
+## y+ là gì?
+
+y+ là **khoảng cách không thứ nguyên** từ tâm ô lưới đầu tiên đến tường, đo bằng "thước" của lớp biên rối:
+
+<div class="formula">y+ = ρ · u<sub>τ</sub> · y / μ,   với   u<sub>τ</sub> = √(τ<sub>w</sub> / ρ)</div>
+
+Trong đó *y* là khoảng cách tới tường, *τ<sub>w</sub>* là ứng suất cắt tại tường và *u<sub>τ</sub>* là vận tốc ma sát. Lớp biên rối gồm ba vùng chính:
+
+- **Viscous sublayer** (y+ < 5): ma sát nhớt chiếm ưu thế, vận tốc tuyến tính theo y+.
+- **Buffer layer** (5 < y+ < 30): vùng chuyển tiếp — *nên tránh đặt tâm ô đầu tiên ở đây*.
+- **Log-law region** (30 < y+ < 300): vận tốc tuân theo luật logarit.
+
+## Nên chọn y+ bao nhiêu?
+
+| Mục tiêu mô phỏng | y+ khuyến nghị | Wall treatment |
+|---|---|---|
+| Lực cản/ma sát chính xác, tách dòng, truyền nhiệt | ≈ 1 | Low y+ / All y+ |
+| Dòng nội bộ, HVAC, ước lượng nhanh | 30 – 100 | High y+ / All y+ |
+| Mô hình rất lớn, chỉ quan tâm dòng chính | 30 – 300 | High y+ |
+
+Trong STAR-CCM+, **All y+ Wall Treatment** là lựa chọn an toàn: nó tự pha trộn giữa hai cách tiếp cận, nên kết quả vẫn hợp lý khi y+ không đồng đều trên bề mặt. Tuy vậy, "an toàn" không có nghĩa là "chính xác" — với bài toán tách dòng hay truyền nhiệt, hãy cố gắng đạt y+ ≈ 1.
+
+## Tính chiều dày lớp lưới đầu tiên
+
+Vì τ<sub>w</sub> chưa biết trước khi chạy mô phỏng, ta ước lượng bằng tương quan tấm phẳng (Schlichting):
+
+<div class="formula">C<sub>f</sub> = [2·log<sub>10</sub>(Re) − 0.65]<sup>−2.3</sup>,   τ<sub>w</sub> = ½·C<sub>f</sub>·ρ·U²</div>
+
+Từ đó suy ra khoảng cách tâm ô *y*. Vì STAR-CCM+ dùng phương pháp thể tích hữu hạn với giá trị lưu tại tâm ô, **chiều dày lớp prism đầu tiên ≈ 2·y**. Thử ngay với máy tính dưới đây:
+
+<YPlusCalculator lang="vi" />
+
+## Thiết lập Prism Layer trong STAR-CCM+
+
+1. Trong **Automated Mesh**, thêm *Prism Layer Mesher*.
+2. Chọn **Prism Layer Total Thickness** ≈ chiều dày lớp biên δ (máy tính phía trên có ước lượng).
+3. Đặt **Number of Prism Layers** và **Prism Layer Stretching** (thường 1.1–1.3) sao cho lớp đầu bằng giá trị đã tính. Có thể dùng tùy chọn *Prism Layer Near Wall Thickness* để khai báo trực tiếp.
+4. Sau khi chạy, tạo **Scalar Scene** hiển thị *Wall Y+* trên bề mặt để kiểm tra.
+
+## Những lỗi thường gặp
+
+- **Chuyển tiếp đột ngột** giữa lớp prism cuối và lưới lõi — hãy để chiều dày lớp cuối xấp xỉ kích thước ô lõi lân cận.
+- **Lớp prism bị co lại** ở góc nhọn, khe hẹp — kiểm tra bằng *Mesh Diagnostics* và cục bộ hóa thông số.
+- **Chỉ kiểm tra y+ trung bình** — vùng gia tốc mạnh (mép trước, đỉnh xe) thường có y+ cao hơn nhiều.
+
+## Kết luận
+
+y+ không phải con số để "điền cho đủ" — nó quyết định mô hình rối có làm đúng việc hay không. Hãy ước lượng trước, thiết lập prism layer có chủ đích, và **luôn kiểm tra lại y+ thực tế** sau mô phỏng.
+
+*Bạn muốn mình review thiết lập lưới cho dự án của bạn? [Gửi yêu cầu tại đây](/contact?service=training).*

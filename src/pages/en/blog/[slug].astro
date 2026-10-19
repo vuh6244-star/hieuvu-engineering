@@ -1,0 +1,13 @@
+---
+import PostView from '@/views/PostView.astro';
+import { getCollection } from 'astro:content';
+import { langOf, slugOf } from '@/lib/content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('blog', (e) => langOf(e.id) === 'en' && (!e.data.draft || import.meta.env.DEV));
+  return entries.map((entry) => ({ params: { slug: slugOf(entry.id) }, props: { entry } }));
+}
+const { entry } = Astro.props;
+---
+
+<PostView post={entry} lang="en" />

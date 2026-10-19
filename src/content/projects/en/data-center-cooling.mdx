@@ -1,0 +1,36 @@
+---
+title: Data-center cooling optimisation with CFD
+description: Temperature and airflow simulation of a 120-rack server room, locating hot-spots and proposing a containment layout that lowers rack inlet temperatures.
+date: 2026-04-02
+category: hvac
+industry: Data Center · HVAC
+art: datacenter
+tools: [Simcenter STAR-CCM+]
+featured: true
+sample: true
+metrics:
+  - label: Max rack inlet temperature
+    value: "−4.5 °C"
+  - label: Racks
+    value: "120"
+---
+
+## Challenge
+
+A server room under expansion showed **hot-spots** at the end of rack rows, with some inlet temperatures above the ASHRAE recommendation (27 °C). The owner needed the root cause and a fix before adding more IT load.
+
+## Approach
+
+- **120 racks** modelled as heat sources with power-matched airflow, 6 **CRAC** units and a raised floor with perforated tiles.
+- ~9M-cell polyhedral mesh, Realizable k-ε turbulence, buoyancy included (Boussinesq).
+- Three scenarios compared: as-is, **cold-aisle containment**, and containment + tuned tile open area.
+
+## Outcome
+
+The as-is case revealed hot air **recirculating** over the top and around the ends of the rows. Containment combined with tile tuning reduced the maximum rack inlet temperature by about **4.5 °C** and allowed a higher CRAC supply temperature — saving cooling energy.
+
+## Lessons learned
+
+In data centers, **airflow distribution through the raised floor** matters as much as total cooling capacity. CFD shows the path of hot air that point sensors simply cannot.
+
+> *Note: this is illustrative sample content. Figures will be updated with real project data.*

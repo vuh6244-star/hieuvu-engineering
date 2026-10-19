@@ -1,0 +1,63 @@
+---
+title: "What is y+? Choosing near-wall mesh thickness in Simcenter STAR-CCM+"
+description: A practical explanation of y+, when to target y+ ≈ 1 versus 30–100, and how to size the first prism layer — with an online y+ calculator.
+date: 2026-09-20
+category: tutorial
+tags: [y+, prism layer, mesh, STAR-CCM+, turbulence]
+art: airfoil
+sample: true
+---
+import YPlusCalculator from '@/components/YPlusCalculator.astro';
+
+If your predicted drag is 20–30% off from experiments even though the mesh "looks fine", the culprit is often the **near-wall mesh**. This article explains what y+ is, how to pick a suitable value and how to set up *prism layers* in Simcenter STAR-CCM+.
+
+## What is y+?
+
+y+ is the **dimensionless distance** from the first cell centroid to the wall, measured with the "ruler" of the turbulent boundary layer:
+
+<div class="formula">y+ = ρ · u<sub>τ</sub> · y / μ,   where   u<sub>τ</sub> = √(τ<sub>w</sub> / ρ)</div>
+
+Here *y* is the wall distance, *τ<sub>w</sub>* the wall shear stress and *u<sub>τ</sub>* the friction velocity. A turbulent boundary layer has three main regions:
+
+- **Viscous sublayer** (y+ < 5): viscous friction dominates, velocity is linear in y+.
+- **Buffer layer** (5 < y+ < 30): the transition zone — *avoid placing the first cell centroid here*.
+- **Log-law region** (30 < y+ < 300): velocity follows the logarithmic law.
+
+## Which y+ should you target?
+
+| Simulation goal | Recommended y+ | Wall treatment |
+|---|---|---|
+| Accurate drag/friction, separation, heat transfer | ≈ 1 | Low y+ / All y+ |
+| Internal flows, HVAC, quick estimates | 30 – 100 | High y+ / All y+ |
+| Very large models, bulk flow only | 30 – 300 | High y+ |
+
+In STAR-CCM+, **All y+ Wall Treatment** is the safe choice: it blends both approaches, so results remain reasonable when y+ varies over the surface. But "safe" is not "accurate" — for separation or heat-transfer problems, aim for y+ ≈ 1.
+
+## Sizing the first cell
+
+Since τ<sub>w</sub> is unknown before solving, estimate it from the flat-plate correlation (Schlichting):
+
+<div class="formula">C<sub>f</sub> = [2·log<sub>10</sub>(Re) − 0.65]<sup>−2.3</sup>,   τ<sub>w</sub> = ½·C<sub>f</sub>·ρ·U²</div>
+
+This gives the centroid distance *y*. Because STAR-CCM+ is a cell-centred finite-volume code, **first prism layer thickness ≈ 2·y**. Try it with the calculator below:
+
+<YPlusCalculator lang="en" />
+
+## Setting up prism layers in STAR-CCM+
+
+1. In **Automated Mesh**, add the *Prism Layer Mesher*.
+2. Set **Prism Layer Total Thickness** close to the boundary-layer thickness δ (estimated above).
+3. Choose **Number of Prism Layers** and **Prism Layer Stretching** (typically 1.1–1.3) so the first layer matches your value. The *Prism Layer Near Wall Thickness* option lets you specify it directly.
+4. After solving, create a **Scalar Scene** showing *Wall Y+* on the surfaces to verify.
+
+## Common mistakes
+
+- **Abrupt transition** between the last prism layer and the core mesh — keep the last layer close to the neighbouring core cell size.
+- **Collapsed prism layers** at sharp corners and narrow gaps — check with *Mesh Diagnostics* and use local settings.
+- **Only checking average y+** — strongly accelerated regions (leading edges, roofs) often have much higher y+.
+
+## Conclusion
+
+y+ is not a box to tick — it decides whether your turbulence model does its job. Estimate it upfront, set up prism layers deliberately and **always check the actual y+** after the run.
+
+*Want me to review the mesh setup for your project? [Send a request here](/en/contact?service=training).*

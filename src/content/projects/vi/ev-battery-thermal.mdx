@@ -1,0 +1,35 @@
+---
+title: Quản lý nhiệt pack pin xe điện (BTMS)
+description: Đồng mô phỏng Simcenter STAR-CCM+ và Simcenter Amesim để đánh giá chênh lệch nhiệt độ giữa các cell pin khi sạc nhanh và tối ưu tấm làm mát.
+date: 2025-11-08
+category: thermal
+industry: Xe điện · E-Mobility
+art: battery
+tools: [Simcenter STAR-CCM+, Simcenter Amesim]
+sample: true
+metrics:
+  - label: Chênh lệch nhiệt giữa các cell
+    value: "8 → 4.2 °C"
+  - label: Mô phỏng
+    value: "3D + 1D"
+---
+
+## Bài toán
+
+Khi **sạc nhanh**, chênh lệch nhiệt độ giữa các cell trong pack pin lớn làm tăng tốc độ lão hóa không đồng đều. Mục tiêu là giữ chênh lệch dưới 5 °C mà không tăng đáng kể tổn thất áp suất của mạch làm mát.
+
+## Phương pháp
+
+- Mô hình **CHT (truyền nhiệt liên hợp)** 3D gồm cell, tấm làm mát (cold plate) và chất lỏng làm mát trong Simcenter STAR-CCM+.
+- Mạch làm mát và chiến lược điều khiển bơm mô phỏng 1D trong **Simcenter Amesim**, ghép nối với mô hình 3D.
+- Đánh giá 3 cấu hình kênh làm mát: song song, serpentine và phân nhánh.
+
+## Kết quả
+
+Cấu hình **kênh phân nhánh** giảm chênh lệch nhiệt độ giữa các cell từ khoảng **8 °C xuống 4.2 °C** trong chu trình sạc nhanh, với tổn thất áp suất tăng không đáng kể.
+
+## Bài học
+
+Kết hợp **3D chi tiết với mô hình hệ thống 1D** cho phép đánh giá cả chu trình vận hành dài mà vẫn giữ độ chính xác cục bộ — đây là thế mạnh của hệ sinh thái Simcenter.
+
+> *Lưu ý: đây là nội dung mẫu minh họa. Số liệu sẽ được cập nhật theo dự án thực tế.*

@@ -1,0 +1,60 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/SectionHeading.astro';
+import ProjectCard from '@/components/ProjectCard.astro';
+import FilterBar from '@/components/FilterBar.astro';
+import CtaPanel from '@/components/CtaPanel.astro';
+import Icon from '@/components/Icon.astro';
+import { projectCategories, upcomingProjects, type ProjectCategory } from '@/data/site';
+import { useTranslations, type Lang } from '@/i18n/ui';
+import { getProjects } from '@/lib/content';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const projects = await getProjects(lang);
+const options = (Object.keys(projectCategories) as ProjectCategory[]).map((id) => ({
+  id,
+  label: projectCategories[id][lang],
+  count: projects.filter((p) => p.data.category === id).length,
+}));
+---
+
+<BaseLayout
+  lang={lang}
+  title={L('Dự án mô phỏng CFD — Case study', 'CFD simulation projects — Case studies')}
+  description={L('Danh mục case study mô phỏng CFD: khí động học ô tô, làm mát data center, bơm ly tâm, quản lý nhiệt pin xe điện và bồn khuấy trộn bằng Simcenter STAR-CCM+.', 'CFD case studies: automotive aerodynamics, data-center cooling, centrifugal pumps, EV battery thermal management and mixing tanks with Simcenter STAR-CCM+.')}
+>
+  <section class="bg-grid pb-10 pt-32 md:pt-40">
+    <div class="container-x">
+      <SectionHeading as="h1" eyebrow={L('Portfolio', 'Portfolio')} title={L('Dự án &', 'Projects &')} strong={L('case study.', 'case studies.')} desc={L('Mỗi dự án trình bày bài toán, phương pháp mô hình hóa và kết quả định lượng — cách tôi tiếp cận một vấn đề kỹ thuật bằng CFD.', 'Each project covers the challenge, modelling approach and quantified outcome — how I tackle an engineering problem with CFD.')} />
+      <div class="mt-10">
+        <FilterBar label={t('projects.filter')} allLabel={t('common.all')} options={options} target="#project-grid" />
+      </div>
+    </div>
+  </section>
+
+  <section class="container-x pb-10" aria-label={t('nav.projects')}>
+    <ul id="project-grid" class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {projects.map((p) => <li data-item class="h-full"><ProjectCard project={p} lang={lang} headingLevel="h2" /></li>)}
+    </ul>
+  </section>
+
+  <section class="container-x pb-6 pt-10" aria-labelledby="upcoming-projects">
+    <h2 id="upcoming-projects" class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t('projects.upcoming')}</h2>
+    <ul class="mt-5 grid gap-3 md:grid-cols-3">
+      {upcomingProjects.map((u) => (
+        <li class="reveal flex items-start gap-3 rounded-2xl border border-dashed border-line-strong p-5">
+          <Icon name="clock" size={18} class="mt-0.5 shrink-0 text-accent" />
+          <div>
+            <p class="font-medium text-fg">{u.title[lang]}</p>
+            <p class="mt-1 font-mono text-xs text-muted">{projectCategories[u.category][lang]} · {t('common.comingSoon')}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <CtaPanel lang={lang} />
+</BaseLayout>

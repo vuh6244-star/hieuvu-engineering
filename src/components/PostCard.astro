@@ -1,0 +1,40 @@
+---
+import { Image } from 'astro:assets';
+import FlowArt from './FlowArt.astro';
+import { blogCategories } from '@/data/site';
+import { formatDate, localize, useTranslations, type Lang } from '@/i18n/ui';
+import { readingTime, slugOf, type Post } from '@/lib/content';
+
+interface Props { post: Post; lang: Lang; headingLevel?: 'h2' | 'h3' }
+const { post, lang, headingLevel: H = 'h3' } = Astro.props;
+const t = useTranslations(lang);
+const d = post.data;
+const href = localize(`/blog/${slugOf(post.id)}`, lang);
+const mins = d.readingTime ?? readingTime(post.body, lang);
+---
+
+<article class="group card reveal relative flex h-full flex-col overflow-hidden transition-[border-color,translate] duration-300 hover:-translate-y-1 hover:border-accent/60" data-category={d.category}>
+  <div class="aspect-[16/9] overflow-hidden bg-ink">
+    {
+      d.cover ? (
+        <Image src={d.cover} alt={d.coverAlt ?? d.title} widths={[480, 800]} sizes="(min-width: 1024px) 33vw, 100vw" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+      ) : (
+        <FlowArt variant={d.art} hud={false} class="h-full w-full transition-transform duration-700 group-hover:scale-[1.03]" label={d.title} />
+      )
+    }
+  </div>
+  <div class="flex flex-1 flex-col p-5 md:p-6">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted">
+      <span class="text-accent">{blogCategories[d.category][lang]}</span>
+      <span aria-hidden="true">·</span>
+      <time datetime={d.date.toISOString()}>{formatDate(d.date, lang)}</time>
+      <span aria-hidden="true">·</span>
+      <span>{mins} {t('common.minRead')}</span>
+    </div>
+    <H class="mt-3 text-lg font-semibold leading-snug text-fg">
+      <a href={href} class="after:absolute after:inset-0 focus-visible:outline-none">{d.title}</a>
+    </H>
+    <p class="mt-2 line-clamp-3 text-sm text-muted">{d.description}</p>
+    {d.sample && import.meta.env.DEV && <span class="mt-3 w-fit rounded-full bg-amber-400 px-2.5 py-0.5 text-[0.7rem] font-semibold text-black">{t('common.sample')}</span>}
+  </div>
+</article>

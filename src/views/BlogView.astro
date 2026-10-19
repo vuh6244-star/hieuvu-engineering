@@ -1,0 +1,69 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/SectionHeading.astro';
+import PostCard from '@/components/PostCard.astro';
+import FilterBar from '@/components/FilterBar.astro';
+import Icon from '@/components/Icon.astro';
+import { blogCategories, socials, upcomingPosts, type BlogCategory } from '@/data/site';
+import { useTranslations, type Lang } from '@/i18n/ui';
+import { getPosts } from '@/lib/content';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const posts = await getPosts(lang);
+const options = (Object.keys(blogCategories) as BlogCategory[]).map((id) => ({
+  id,
+  label: blogCategories[id][lang],
+  count: posts.filter((p) => p.data.category === id).length,
+}));
+const youtube = socials.find((s) => s.id === 'youtube')!;
+---
+
+<BaseLayout
+  lang={lang}
+  title={L('Kiến thức CFD & hướng dẫn Simcenter STAR-CCM+', 'CFD insights & Simcenter STAR-CCM+ tutorials')}
+  description={L('Bài viết kỹ thuật về CFD: y+, lưới, hội tụ, mô hình rối và mẹo Simcenter STAR-CCM+ từ kinh nghiệm dự án thực tế.', 'Technical CFD articles: y+, meshing, convergence, turbulence models and Simcenter STAR-CCM+ tips from real projects.')}
+>
+  <section class="bg-grid pb-10 pt-32 md:pt-40">
+    <div class="container-x">
+      <SectionHeading as="h1" eyebrow={L('Kiến thức', 'Insights')} title={L('Học CFD', 'Learn CFD')} strong={L('từ thực tế.', 'from practice.')} desc={L('Hướng dẫn, kiến thức nền tảng và bài học từ dự án — viết cho kỹ sư và người đang học mô phỏng.', 'Tutorials, fundamentals and project lessons — written for engineers and simulation learners.')} />
+      <div class="mt-10">
+        <FilterBar label={L('Lọc theo chủ đề', 'Filter by topic')} allLabel={t('common.all')} options={options} target="#post-grid" />
+      </div>
+    </div>
+  </section>
+
+  <section class="container-x pb-10" aria-label={t('nav.blog')}>
+    <ul id="post-grid" class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {posts.map((p) => <li data-item class="h-full"><PostCard post={p} lang={lang} headingLevel="h2" /></li>)}
+    </ul>
+  </section>
+
+  <section class="container-x grid gap-5 py-10 lg:grid-cols-3" aria-labelledby="upcoming-posts">
+    <div class="lg:col-span-2">
+      <h2 id="upcoming-posts" class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t('blog.upcoming')}</h2>
+      <ul class="mt-5 grid gap-3 sm:grid-cols-2">
+        {upcomingPosts.map((u) => (
+          <li class="reveal flex items-start gap-3 rounded-2xl border border-dashed border-line-strong p-5">
+            <Icon name="book" size={18} class="mt-0.5 shrink-0 text-accent" />
+            <div>
+              <p class="font-medium text-fg">{u.title[lang]}</p>
+              <p class="mt-1 font-mono text-xs text-muted">{blogCategories[u.category][lang]} · {t('common.comingSoon')}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <a href={youtube.href} target="_blank" rel="noopener" class="group reveal relative flex flex-col justify-between overflow-hidden rounded-3xl bg-ink p-6 text-ink-fg">
+      <div class="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan/20 blur-3xl" aria-hidden="true"></div>
+      <Icon name="youtube" size={32} class="text-cyan" />
+      <div class="mt-10">
+        <p class="font-display text-xl font-semibold">{L('Xem video hướng dẫn trên YouTube', 'Watch video tutorials on YouTube')}</p>
+        <p class="mt-1 font-mono text-sm text-ink-muted">{youtube.handle}</p>
+        <span class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan">{L('Đăng ký kênh', 'Subscribe')} <Icon name="arrow-up-right" size={16} /></span>
+      </div>
+    </a>
+  </section>
+</BaseLayout>

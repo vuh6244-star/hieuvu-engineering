@@ -1,0 +1,36 @@
+---
+title: Centrifugal pump simulation — H-Q curve and cavitation
+description: Predicting head, efficiency and cavitation risk of a centrifugal pump across operating points, validated against the manufacturer's test data.
+date: 2026-01-20
+category: turbo
+industry: Industrial pumps · Turbomachinery
+art: pump
+tools: [Simcenter STAR-CCM+, Siemens NX]
+featured: true
+sample: true
+metrics:
+  - label: Head deviation vs. test
+    value: "< 3%"
+  - label: Operating points
+    value: "7"
+---
+
+## Challenge
+
+A pump manufacturer wanted to **build the H-Q performance curve** of a new impeller through simulation — reducing test-rig iterations — and to assess **cavitation** risk at high flow rates.
+
+## Approach
+
+- Full model: suction pipe, 7-blade impeller, volute and discharge pipe.
+- Rotating region with **MRF** for steady operating points; design point re-checked with **Rigid Body Motion** (true mesh motion).
+- **Schnerr-Sauer** cavitation model to predict vapour regions at the blade leading edge.
+
+## Outcome
+
+The simulated H-Q curve over 7 operating points deviated by **less than 3%** from test data in the high-efficiency range. At 120% of design flow, vapour appeared at the suction-side leading edge — the basis for a recommended blade inlet-angle change.
+
+## Lessons learned
+
+MRF is good enough for performance curves, but **rotor–volute interaction** needs RBM to capture pressure pulsations. Choosing the right modelling fidelity balances accuracy and compute time.
+
+> *Note: this is illustrative sample content. Figures will be updated with real project data.*

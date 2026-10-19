@@ -1,0 +1,39 @@
+---
+title: Boiler combustion simulation — cutting NOx and balancing furnace heat
+description: CFD model of an industrial boiler furnace with combustion, thermal radiation and NOx formation, calibrated against plant measurements to assess secondary-air adjustments.
+date: 2026-06-15
+category: energy
+industry: Energy · Power & industrial boilers
+art: furnace
+tools: [Simcenter STAR-CCM+, Siemens NX]
+featured: true
+sample: true
+metrics:
+  - label: NOx reduction at furnace exit
+    value: "−18%"
+  - label: Temperature deviation vs. measurements
+    value: "< 5%"
+  - label: Operating scenarios
+    value: "4"
+---
+
+## Challenge
+
+The plant needed to lower **NOx** at the furnace exit without increasing unburnt carbon or making major hardware changes. The question: would redistributing **secondary air** between burner levels be enough?
+
+## Approach
+
+- **Geometry:** furnace, burner levels and flue-gas path up to the superheater, rebuilt from drawings in Siemens NX.
+- **Physics:** Realizable k-ε turbulence, solid-fuel combustion with Lagrangian particles, **DOM thermal radiation**, thermal and fuel NOx formation models.
+- **Verification:** model calibrated against the plant's **operating measurements** (flue-gas temperature, O₂ and NOx) before any scenario was assessed.
+- **Scenarios:** 4 secondary-air distributions and burner angles.
+
+## Outcome
+
+Shifting secondary air to the upper level, creating a fuel-rich zone in the lower level, cut furnace-exit NOx by about **18%**. Flue-gas temperature ahead of the superheater stayed within design limits. The temperature field also showed the flame no longer impinging on the rear wall, unlike the current case.
+
+## Lessons learned
+
+A furnace model is only trustworthy once it **matches plant measurements first**. From a verified model, every option is assessed on the computer before field trials, which reduces trial and error on site.
+
+> *Note: this is illustrative sample content. Figures will be updated with real project data (published with client permission).*

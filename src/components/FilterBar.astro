@@ -1,0 +1,66 @@
+---
+/* Bộ lọc theo chuyên đề — lọc phía trình duyệt, đồng bộ với ?cat= để chia sẻ link */
+interface Props {
+  label: string;
+  allLabel: string;
+  options: { id: string; label: string; count: number }[];
+  target: string; // CSS selector của lưới chứa thẻ
+}
+const { label, allLabel, options, target } = Astro.props;
+const total = options.reduce((s, o) => s + o.count, 0);
+---
+
+<div class="reveal flex flex-wrap items-center gap-2" role="group" aria-label={label} data-filter-bar data-target={target}>
+  <button type="button" class="filter-btn" aria-pressed="true" data-filter="all">{allLabel} <span class="font-mono text-xs opacity-60">{total}</span></button>
+  {
+    options.filter((o) => o.count > 0).map((o) => (
+      <button type="button" class="filter-btn" aria-pressed="false" data-filter={o.id}>
+        {o.label} <span class="font-mono text-xs opacity-60">{o.count}</span>
+      </button>
+    ))
+  }
+</div>
+
+<style>
+  .filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.5rem;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--fg-soft);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn[aria-pressed='true'] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-filter-bar]').forEach((bar) => {
+    const grid = document.querySelector<HTMLElement>(bar.dataset.target!);
+    if (!grid) return;
+    const buttons = bar.querySelectorAll<HTMLButtonElement>('[data-filter]');
+    const apply = (cat: string, push = false) => {
+      const valid = [...buttons].some((b) => b.dataset.filter === cat);
+      const c = valid ? cat : 'all';
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === c)));
+      grid.querySelectorAll<HTMLElement>('[data-category]').forEach((card) => {
+        const show = c === 'all' || card.dataset.category === c;
+        (card.closest('[data-item]') as HTMLElement ?? card).hidden = !show;
+        if (show) card.classList.add('is-visible');
+      });
+      if (push) {
+        const url = new URL(location.href);
+        c === 'all' ? url.searchParams.delete('cat') : url.searchParams.set('cat', c);
+        history.replaceState(null, '', url);
+      }
+    };
+    buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.filter!, true)));
+    apply(new URL(location.href).searchParams.get('cat') ?? 'all');
+  });
+</script>

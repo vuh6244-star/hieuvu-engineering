@@ -1,0 +1,49 @@
+---
+import { Image } from 'astro:assets';
+import FlowArt from './FlowArt.astro';
+import Icon from './Icon.astro';
+import { projectCategories } from '@/data/site';
+import { localize, useTranslations, type Lang } from '@/i18n/ui';
+import { slugOf, type Project } from '@/lib/content';
+
+interface Props { project: Project; lang: Lang; size?: 'default' | 'large'; headingLevel?: 'h2' | 'h3' }
+const { project, lang, size = 'default', headingLevel: H = 'h3' } = Astro.props;
+const t = useTranslations(lang);
+const d = project.data;
+const href = localize(`/projects/${slugOf(project.id)}`, lang);
+const cat = projectCategories[d.category][lang];
+---
+
+<article class="group card reveal relative flex h-full flex-col overflow-hidden transition-[border-color,translate] duration-300 hover:-translate-y-1 hover:border-accent/60" data-category={d.category}>
+  <div class:list={['relative overflow-hidden bg-ink', size === 'large' ? 'aspect-[16/10] md:aspect-[16/9]' : 'aspect-[16/10]']}>
+    {
+      d.cover ? (
+        <Image src={d.cover} alt={d.coverAlt ?? d.title} widths={[480, 800, 1200]} sizes="(min-width: 1024px) 50vw, 100vw" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+      ) : (
+        <FlowArt variant={d.art} hud={size === 'large'} class="h-full w-full transition-transform duration-700 group-hover:scale-[1.03]" label={d.coverAlt ?? d.title} />
+      )
+    }
+    <span class="absolute left-4 top-4 rounded-full border border-white/15 bg-ink/70 px-3 py-1 font-mono text-[0.7rem] uppercase tracking-wider text-cyan backdrop-blur">{cat}</span>
+    {d.sample && import.meta.env.DEV && <span class="absolute right-4 top-4 rounded-full bg-amber-400 px-2.5 py-1 text-[0.7rem] font-semibold text-black">{t('common.sample')}</span>}
+  </div>
+  <div class="flex flex-1 flex-col p-5 md:p-6">
+    <p class="font-mono text-xs text-muted">{d.industry}</p>
+    <H class:list={['mt-2 font-semibold leading-snug text-fg', size === 'large' ? 'text-2xl' : 'text-lg']}>
+      <a href={href} class="after:absolute after:inset-0 focus-visible:outline-none">{d.title}</a>
+    </H>
+    <p class="mt-2 line-clamp-2 text-sm text-muted">{d.description}</p>
+    {
+      d.metrics.length > 0 && (
+        <dl class="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4">
+          {d.metrics.slice(0, 2).map((m) => (
+            <div>
+              <dt class="text-xs text-muted">{m.label}</dt>
+              <dd class="font-mono text-lg font-semibold text-accent">{m.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+    <span class="link-arrow mt-auto pt-5 text-sm">{t('common.readMore')} <Icon name="arrow-right" size={16} /></span>
+  </div>
+</article>

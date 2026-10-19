@@ -1,0 +1,35 @@
+---
+title: Industrial mixing tank — mixing time and flow structure
+description: Flow simulation in a baffled stirred tank comparing two impeller types to shorten mixing time and reduce power consumption.
+date: 2025-08-25
+category: multiphase
+industry: Food & Chemicals · Process
+art: mixer
+tools: [Simcenter STAR-CCM+]
+sample: true
+metrics:
+  - label: Mixing time
+    value: "−22%"
+  - label: Impeller power
+    value: "−10%"
+---
+
+## Challenge
+
+A plant needed to shorten the **mixing time** of a 5 m³ batch tank and evaluate replacing the Rushton turbine with a **pitched-blade** impeller to cut motor power.
+
+## Approach
+
+- Four-baffle tank with the free surface modelled using **VOF** to capture vortex formation.
+- Impeller modelled with mesh motion (**Rigid Body Motion**) to resolve the unsteady flow.
+- Mixing time determined from a **passive scalar** tracer at monitoring points.
+
+## Outcome
+
+The pitched-blade impeller produced stronger axial circulation, **reducing mixing time by about 22%** and **impeller power by 10%** at the same speed. A dead zone near the tank bottom disappeared after lowering the impeller clearance.
+
+## Lessons learned
+
+For stirred tanks, **impeller clearance** matters as much as impeller type. A passive scalar is a cheap and effective way to quantify mixing quality.
+
+> *Note: this is illustrative sample content. Figures will be updated with real project data.*

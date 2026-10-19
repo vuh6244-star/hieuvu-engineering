@@ -1,0 +1,31 @@
+---
+import Icon from './Icon.astro';
+import { site } from '@/data/site';
+import { localize, useTranslations, type Lang } from '@/i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const words = t('cta.title').split(' ');
+const lines = Array.from({ length: 9 }, (_, k) => `M0 ${40 + k * 14} C 300 ${10 + k * 14}, 700 ${90 + k * 12}, 1200 ${30 + k * 14}`);
+---
+
+<section class="container-x py-16 md:py-24" aria-labelledby="cta-title">
+  <div class="reveal relative overflow-hidden rounded-[var(--radius-panel)] bg-ink px-6 py-14 text-center md:px-16 md:py-20">
+    <div class="pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" style="background: radial-gradient(60% 80% at 50% 0%, rgb(62 214 224 / 0.18), transparent 70%), radial-gradient(40% 60% at 100% 100%, rgb(37 99 235 / 0.25), transparent 70%)"></div>
+    <svg class="pointer-events-none absolute inset-x-0 bottom-0 h-40 w-full opacity-40" viewBox="0 0 1200 160" preserveAspectRatio="none" aria-hidden="true">
+      {lines.map((d, k) => <path d={d} fill="none" stroke="#3ed6e0" stroke-opacity={0.15 + k * 0.05} stroke-width="1" />)}
+    </svg>
+    <div class="relative">
+      <p class="eyebrow justify-center !text-cyan">{lang === 'vi' ? 'Bắt đầu dự án' : 'Start a project'}</p>
+      <h2 id="cta-title" class="mx-auto mt-5 max-w-3xl text-3xl font-light text-ink-fg md:text-5xl">
+        {words.slice(0, -2).join(' ')} <span class="font-bold">{words.slice(-2).join(' ')}</span>
+      </h2>
+      <p class="mx-auto mt-5 max-w-2xl text-ink-muted md:text-lg">{t('cta.desc')}</p>
+      <div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <a href={localize('/contact', lang)} class="btn btn-primary w-full sm:w-auto">{t('cta.primary')} <Icon name="arrow-right" size={18} /></a>
+        <a href={`https://zalo.me/${site.phone}`} target="_blank" rel="noopener" class="btn btn-ghost-ink w-full sm:w-auto"><Icon name="zalo" size={18} /> {t('cta.zalo')}</a>
+        <a href={`mailto:${site.email}`} class="btn btn-ghost-ink w-full sm:w-auto"><Icon name="mail" size={18} /> Email</a>
+      </div>
+    </div>
+  </div>
+</section>

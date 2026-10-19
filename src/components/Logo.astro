@@ -1,0 +1,31 @@
+---
+import { Image } from 'astro:assets';
+import markDark from '@/assets/brand/mark-on-dark.png';
+import markLight from '@/assets/brand/mark-on-light.png';
+import logoDark from '@/assets/brand/logo-on-dark.png';
+import logoLight from '@/assets/brand/logo-on-light.png';
+
+interface Props {
+  variant?: 'mark' | 'full';
+  /** 'auto' đổi theo giao diện; 'dark' luôn dùng bản cho nền tối */
+  tone?: 'auto' | 'dark';
+  height?: number;
+  class?: string;
+}
+const { variant = 'mark', tone = 'auto', height = 28, class: className = '' } = Astro.props;
+const onDark = variant === 'mark' ? markDark : logoDark;
+const onLight = variant === 'mark' ? markLight : logoLight;
+const width = Math.round((onDark.width / onDark.height) * height);
+const alt = 'Hiếu Vũ Engineering';
+---
+
+{
+  tone === 'dark' ? (
+    <Image src={onDark} alt={alt} width={width} height={height} densities={[1, 2]} class={className} loading="eager" />
+  ) : (
+    <>
+      <Image src={onLight} alt={alt} width={width} height={height} densities={[1, 2]} class:list={['dark:hidden', className]} loading="eager" />
+      <Image src={onDark} alt="" aria-hidden="true" width={width} height={height} densities={[1, 2]} class:list={['hidden dark:block', className]} loading="eager" />
+    </>
+  )
+}

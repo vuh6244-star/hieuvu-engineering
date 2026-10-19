@@ -1,0 +1,26 @@
+---
+/*
+  Ảnh minh họa dòng chảy cho dự án/bài viết chưa có ảnh mô phỏng thật.
+  Ảnh là file SVG tĩnh sinh lúc build (src/lib/flowart.ts) → nhẹ, được cache.
+*/
+import type { ArtVariant } from '@/lib/flowart';
+interface Props {
+  variant: ArtVariant;
+  label?: string;
+  class?: string;
+  /** Hiện thanh màu & nhãn trường (tắt cho thẻ nhỏ) */
+  hud?: boolean;
+  eager?: boolean;
+}
+const { variant, label, class: className = '', hud = true, eager = false } = Astro.props;
+---
+
+<img
+  src={`/art/${variant}${hud ? '' : '-plain'}.svg`}
+  alt={label ?? ''}
+  width="800"
+  height="500"
+  loading={eager ? 'eager' : 'lazy'}
+  decoding="async"
+  class:list={['object-cover', className]}
+/>

@@ -1,0 +1,35 @@
+{
+  "name": "hieuvu-engineering",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website cá nhân Hiếu Vũ | Engineering — CFD Simulation Engineer",
+  "type": "module",
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "start": "node server.mjs",
+    "check": "astro check",
+    "assets": "node scripts/prepare-assets.mjs"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4",
+    "@astrojs/node": "^9",
+    "@astrojs/sitemap": "^3",
+    "@fontsource-variable/inter": "^5",
+    "@fontsource-variable/jetbrains-mono": "^5",
+    "@tailwindcss/vite": "^4",
+    "astro": "^5",
+    "nodemailer": "^7",
+    "sharp": "^0.34",
+    "tailwindcss": "^4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "^5.9.3"
+  }
+}

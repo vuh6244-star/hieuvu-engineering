@@ -1,0 +1,22 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Icon from '@/components/Icon.astro';
+import FlowArt from '@/components/FlowArt.astro';
+---
+
+<BaseLayout lang="vi" title="404 — Không tìm thấy trang" description="Trang bạn tìm không tồn tại." noindex alternates={{}}>
+  <section class="container-x grid min-h-[80svh] items-center gap-10 pb-16 pt-32 lg:grid-cols-2">
+    <div>
+      <p class="font-mono text-sm text-accent">Error 404 · Flow separated</p>
+      <h1 class="mt-4 text-5xl font-light md:text-7xl">Dòng chảy <span class="font-bold">bị tách.</span></h1>
+      <p class="mt-5 max-w-md text-lg text-muted">Trang bạn tìm không tồn tại hoặc đã được di chuyển. <span lang="en">The page you are looking for does not exist.</span></p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/" class="btn btn-primary"><Icon name="arrow-right" size={18} class="rotate-180" /> Về trang chủ</a>
+        <a href="/en" class="btn btn-ghost" lang="en">English home</a>
+      </div>
+    </div>
+    <div class="overflow-hidden rounded-[var(--radius-panel)] border border-line">
+      <FlowArt variant="airfoil" class="aspect-[16/10] w-full" />
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,44 @@
+---
+/* Nút YouTube & LinkedIn nổi ở góc phải dưới (phía trên nút trò chuyện) */
+import { socials } from '@/data/site';
+import type { Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const yt = socials.find((s) => s.id === 'youtube')!;
+const li = socials.find((s) => s.id === 'linkedin')!;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const items = [
+  { ...yt, title: L('Kênh YouTube của Hiếu Vũ', 'Hieu Vu on YouTube') },
+  { ...li, title: L('LinkedIn của Hiếu Vũ', 'Hieu Vu on LinkedIn') },
+];
+---
+
+<ul class="fixed bottom-[5.75rem] right-[1.625rem] z-40 flex flex-col gap-2.5 md:right-[1.875rem]" aria-label={L('Mạng xã hội', 'Social links')}>
+  {
+    items.map((s) => (
+      <li>
+        <a
+          href={s.href}
+          target="_blank"
+          rel="noopener"
+          aria-label={s.title}
+          title={s.title}
+          class="group inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink shadow-[0_8px_24px_-8px_rgb(0_0_0/0.55)] ring-1 ring-white/10 transition-transform duration-200 hover:scale-110"
+        >
+          {s.id === 'youtube' ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="1.5" y="5" width="21" height="14" rx="4.5" fill="#FF0000" />
+              <path d="M10 8.8v6.4l5.6-3.2z" fill="#fff" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="1" y="1" width="22" height="22" rx="4" fill="#0A66C2" />
+              <path fill="#fff" d="M6.2 9.5h2.6V18H6.2zM7.5 5.4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM10.4 9.5h2.5v1.2h.04c.35-.66 1.2-1.36 2.47-1.36 2.64 0 3.13 1.74 3.13 4V18h-2.6v-4.1c0-.98-.02-2.24-1.36-2.24-1.37 0-1.58 1.07-1.58 2.17V18h-2.6z" />
+            </svg>
+          )}
+        </a>
+      </li>
+    ))
+  }
+</ul>

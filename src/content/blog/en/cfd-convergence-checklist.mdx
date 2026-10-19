@@ -1,0 +1,45 @@
+---
+title: "A 5-step convergence checklist for CFD — look beyond residuals"
+description: Residuals dropping three orders of magnitude does not guarantee convergence. A 5-step checklist to trust your CFD results before reporting them.
+date: 2026-08-28
+category: tips
+tags: [convergence, residuals, monitors, mesh independence]
+art: pump
+sample: true
+---
+
+"Residuals are down to 1e-4 — can I use the results?" is the question I hear most from CFD beginners. The short answer: **not necessarily**. Here is the 5-step checklist I apply to every project.
+
+## 1. Residuals — necessary, not sufficient
+
+Residuals measure the imbalance of the discretised equations and are normalised differently in each code. In STAR-CCM+, residuals are normalised by the first iterations by default, so a **3–4 order drop** is a good sign but not proof.
+
+What to avoid: residuals that **flatline or oscillate periodically**. That usually means the flow is physically unsteady (e.g. Kármán vortex shedding behind a bluff body) — switch to a transient simulation.
+
+## 2. Monitor engineering quantities
+
+The quantities you actually care about — drag, pump head, peak temperature — must be **flat** against iterations. In STAR-CCM+, create a *Report* → *Monitor* → *Plot* for each from the start.
+
+Tip: add an **Asymptotic Stopping Criterion** to key monitors — for example, less than 0.1% variation over the last 200 iterations.
+
+## 3. Mass and energy balance
+
+Total inflow mass must equal total outflow (imbalance typically < 0.1%). For thermal problems, generated heat must equal heat leaving through the boundaries. A simple *Mass Flow* report on inlets and outlets catches setup mistakes fast.
+
+## 4. Mesh independence
+
+Run at least **three mesh levels** with a consistent refinement ratio (e.g. 1.5 on cell size). Results are trustworthy when the change between the two finest meshes is below your acceptable error. The **Grid Convergence Index (GCI)** quantifies this rigorously.
+
+## 5. Physics and validation
+
+Finally, ask: *do the results make physical sense?* Compare with empirical correlations, manufacturer data or tests where available. A perfectly converged simulation can still be **wrong because of wrong boundary conditions**.
+
+## Checklist summary
+
+1. Residuals drop steadily without periodic oscillation.
+2. Engineering monitors are flat.
+3. Mass/energy imbalance < 0.1–0.5%.
+4. Mesh-independent results (three levels, GCI if possible).
+5. Physically sensible results that match reference data.
+
+Save this checklist and run through it before every report — your clients will trust your results far more.

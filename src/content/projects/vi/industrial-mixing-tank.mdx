@@ -1,0 +1,35 @@
+---
+title: Bồn khuấy trộn công nghiệp — thời gian trộn và cấu trúc dòng
+description: Mô phỏng dòng chảy trong bồn khuấy có vách chắn, so sánh hai loại cánh khuấy để rút ngắn thời gian trộn và giảm công suất tiêu thụ.
+date: 2025-08-25
+category: multiphase
+industry: Thực phẩm & Hóa chất · Process
+art: mixer
+tools: [Simcenter STAR-CCM+]
+sample: true
+metrics:
+  - label: Thời gian trộn
+    value: "−22%"
+  - label: Công suất khuấy
+    value: "−10%"
+---
+
+## Bài toán
+
+Nhà máy cần rút ngắn **thời gian trộn** cho mẻ sản xuất trong bồn 5 m³, đồng thời xem xét thay cánh khuấy Rushton bằng cánh **pitched-blade** để giảm công suất motor.
+
+## Phương pháp
+
+- Bồn có 4 vách chắn, mô hình mặt thoáng bằng **VOF** để xét hiện tượng xoáy phễu.
+- Cánh khuấy mô phỏng bằng chuyển động lưới (**Rigid Body Motion**) để nắm bắt dòng không ổn định.
+- Thời gian trộn xác định qua mô phỏng **chất đánh dấu (passive scalar)** tại các điểm giám sát.
+
+## Kết quả
+
+Cánh pitched-blade tạo dòng tuần hoàn dọc trục mạnh hơn, giúp **giảm khoảng 22% thời gian trộn** và **10% công suất khuấy** ở cùng tốc độ quay. Vùng chết gần đáy bồn được loại bỏ khi hạ độ cao lắp cánh.
+
+## Bài học
+
+Với bồn khuấy, **vị trí lắp đặt cánh** ảnh hưởng không kém chủng loại cánh. Passive scalar là cách rẻ và hiệu quả để định lượng chất lượng trộn.
+
+> *Lưu ý: đây là nội dung mẫu minh họa. Số liệu sẽ được cập nhật theo dự án thực tế.*

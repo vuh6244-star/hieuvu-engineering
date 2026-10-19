@@ -1,0 +1,36 @@
+---
+title: Tối ưu làm mát phòng Data Center bằng CFD
+description: Mô phỏng phân bố nhiệt độ và luồng gió trong phòng máy chủ 120 rack, xác định hot-spot và đề xuất bố trí containment giúp hạ nhiệt độ đầu vào rack.
+date: 2026-04-02
+category: hvac
+industry: Data Center · HVAC
+art: datacenter
+tools: [Simcenter STAR-CCM+]
+featured: true
+sample: true
+metrics:
+  - label: Nhiệt độ đầu vào rack tối đa
+    value: "−4.5 °C"
+  - label: Số rack
+    value: "120"
+---
+
+## Bài toán
+
+Phòng máy chủ đang mở rộng công suất xuất hiện **hot-spot** ở cuối dãy rack, một số rack có nhiệt độ khí đầu vào vượt khuyến nghị ASHRAE (27 °C). Chủ đầu tư cần biết nguyên nhân và giải pháp trước khi lắp thêm thiết bị.
+
+## Phương pháp
+
+- Mô hình hóa **120 rack** dưới dạng nguồn nhiệt có lưu lượng gió tương ứng công suất, 6 dàn **CRAC** và sàn nâng với tấm đục lỗ.
+- Lưới polyhedral ~9M ô, mô hình rối Realizable k-ε, có xét đối lưu tự nhiên (Boussinesq).
+- So sánh 3 kịch bản: hiện trạng, **cold-aisle containment**, và containment + điều chỉnh tỉ lệ tấm đục lỗ.
+
+## Kết quả
+
+Hiện trạng cho thấy khí nóng **tuần hoàn ngược** qua đỉnh và cuối dãy rack. Phương án containment kết hợp điều chỉnh tấm sàn giúp giảm nhiệt độ đầu vào rack tối đa khoảng **4.5 °C**, đồng thời cho phép tăng nhiệt độ cấp của CRAC — tiết kiệm năng lượng làm lạnh.
+
+## Bài học
+
+Với data center, **phân bố lưu lượng qua sàn nâng** quan trọng không kém tổng công suất lạnh. CFD giúp nhìn thấy đường đi của khí nóng mà cảm biến điểm không thể hiện được.
+
+> *Lưu ý: đây là nội dung mẫu minh họa. Số liệu sẽ được cập nhật theo dự án thực tế.*

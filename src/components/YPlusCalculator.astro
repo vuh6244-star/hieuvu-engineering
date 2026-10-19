@@ -1,0 +1,96 @@
+---
+/* Công cụ ước lượng chiều dày lớp lưới đầu tiên theo y+ mục tiêu (tấm phẳng, tương quan Schlichting) */
+interface Props { lang?: 'vi' | 'en' }
+const { lang = 'vi' } = Astro.props;
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const id = `yp-${Math.round(Math.random() * 1e6)}`;
+---
+
+<div class="not-prose my-10 overflow-hidden rounded-3xl border border-line bg-surface" data-yplus id={id}>
+  <div class="flex items-center justify-between gap-3 border-b border-line bg-ink px-5 py-3.5 text-ink-fg">
+    <p class="font-display font-semibold">{L('Máy tính y+ → chiều dày lớp lưới đầu', 'y+ → first-layer thickness calculator')}</p>
+    <span class="font-mono text-xs text-cyan">flat-plate · Schlichting</span>
+  </div>
+  <div class="grid gap-6 p-5 md:grid-cols-2 md:p-6">
+    <form class="grid gap-4" onsubmit="return false">
+      <div>
+        <label class="field-label" for={`${id}-fluid`}>{L('Lưu chất', 'Fluid')}</label>
+        <select id={`${id}-fluid`} name="fluid" class="field">
+          <option value="air">{L('Không khí 25 °C', 'Air 25 °C')}</option>
+          <option value="water">{L('Nước 25 °C', 'Water 25 °C')}</option>
+          <option value="custom">{L('Tùy chỉnh', 'Custom')}</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label" for={`${id}-rho`}>ρ (kg/m³)</label>
+          <input id={`${id}-rho`} name="rho" class="field font-mono" type="number" step="any" min="0" value="1.184" inputmode="decimal" />
+        </div>
+        <div>
+          <label class="field-label" for={`${id}-mu`}>μ (Pa·s)</label>
+          <input id={`${id}-mu`} name="mu" class="field font-mono" type="number" step="any" min="0" value="1.849e-5" inputmode="decimal" />
+        </div>
+        <div>
+          <label class="field-label" for={`${id}-u`}>{L('Vận tốc U∞ (m/s)', 'Velocity U∞ (m/s)')}</label>
+          <input id={`${id}-u`} name="u" class="field font-mono" type="number" step="any" min="0" value="27.8" inputmode="decimal" />
+        </div>
+        <div>
+          <label class="field-label" for={`${id}-l`}>{L('Chiều dài đặc trưng L (m)', 'Reference length L (m)')}</label>
+          <input id={`${id}-l`} name="l" class="field font-mono" type="number" step="any" min="0" value="4.5" inputmode="decimal" />
+        </div>
+      </div>
+      <div>
+        <label class="field-label" for={`${id}-y`}>{L('y+ mục tiêu', 'Target y+')}</label>
+        <input id={`${id}-y`} name="yplus" class="field font-mono" type="number" step="any" min="0" value="1" inputmode="decimal" />
+        <p class="mt-1.5 text-xs text-muted">{L('y+ ≈ 1 cho mô hình low-Re / All y+; 30–100 khi dùng wall function.', 'y+ ≈ 1 for low-Re / All y+ treatment; 30–100 with wall functions.')}</p>
+      </div>
+    </form>
+    <dl class="grid content-start gap-3 rounded-2xl bg-surface-2 p-5 font-mono text-sm" aria-live="polite">
+      <div class="flex justify-between gap-3"><dt class="text-muted">Re<sub>L</sub></dt><dd class="text-fg" data-out="re">—</dd></div>
+      <div class="flex justify-between gap-3"><dt class="text-muted">C<sub>f</sub></dt><dd class="text-fg" data-out="cf">—</dd></div>
+      <div class="flex justify-between gap-3"><dt class="text-muted">u<sub>τ</sub> (m/s)</dt><dd class="text-fg" data-out="ut">—</dd></div>
+      <div class="flex justify-between gap-3"><dt class="text-muted">{L('Khoảng cách tâm ô đầu y', 'First-cell centroid y')}</dt><dd class="text-fg" data-out="y">—</dd></div>
+      <div class="mt-1 flex items-end justify-between gap-3 border-t border-line pt-4">
+        <dt class="font-sans font-semibold text-fg">{L('Chiều dày lớp prism đầu', 'First prism layer thickness')}</dt>
+        <dd class="text-2xl font-bold text-accent" data-out="dy">—</dd>
+      </div>
+      <div class="flex justify-between gap-3"><dt class="text-muted">{L('Chiều dày lớp biên δ ≈', 'Boundary layer δ ≈')}</dt><dd class="text-fg" data-out="delta">—</dd></div>
+      <p class="mt-2 font-sans text-xs text-muted">{L('Ước lượng ban đầu — luôn kiểm tra lại phân bố y+ thực tế sau khi chạy mô phỏng.', 'Initial estimate — always check the actual y+ distribution after running the simulation.')}</p>
+    </dl>
+  </div>
+</div>
+
+<script>
+  const fluids: Record<string, [number, number]> = { air: [1.184, 1.849e-5], water: [997, 8.9e-4] };
+  const fmtLen = (m: number) => (m < 1e-3 ? `${(m * 1e6).toFixed(1)} µm` : m < 1 ? `${(m * 1e3).toFixed(3)} mm` : `${m.toFixed(3)} m`);
+  document.querySelectorAll<HTMLElement>('[data-yplus]').forEach((root) => {
+    const q = (n: string) => root.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${n}"]`)!;
+    const out = (n: string, v: string) => { const el = root.querySelector(`[data-out="${n}"]`); if (el) el.textContent = v; };
+    const calc = () => {
+      const rho = +q('rho').value, mu = +q('mu').value, u = +q('u').value, l = +q('l').value, yp = +q('yplus').value;
+      if (![rho, mu, u, l, yp].every((v) => v > 0)) { ['re', 'cf', 'ut', 'y', 'dy', 'delta'].forEach((k) => out(k, '—')); return; }
+      const re = (rho * u * l) / mu;
+      const cf = Math.pow(2 * Math.log10(re) - 0.65, -2.3);
+      const tau = 0.5 * cf * rho * u * u;
+      const ut = Math.sqrt(tau / rho);
+      const y = (yp * mu) / (rho * ut);
+      const delta = 0.37 * l * Math.pow(re, -0.2);
+      out('re', re.toExponential(2));
+      out('cf', cf.toExponential(3));
+      out('ut', ut.toFixed(3));
+      out('y', fmtLen(y));
+      out('dy', fmtLen(2 * y));
+      out('delta', fmtLen(delta));
+    };
+    q('fluid').addEventListener('change', () => {
+      const f = fluids[q('fluid').value];
+      if (f) { q('rho').value = String(f[0]); q('mu').value = String(f[1]); }
+      calc();
+    });
+    root.querySelectorAll('input').forEach((i) => i.addEventListener('input', () => {
+      if (i.name === 'rho' || i.name === 'mu') (q('fluid') as HTMLSelectElement).value = 'custom';
+      calc();
+    }));
+    calc();
+  });
+</script>

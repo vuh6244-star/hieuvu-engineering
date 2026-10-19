@@ -1,0 +1,311 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ============================================================
+   DESIGN TOKENS — "Precision Engineering"
+   Màu thương hiệu lấy từ logo: cyan #3ED6E0 + navy #0F172A
+   ============================================================ */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --fg: #0f172a;
+  --fg-soft: #334155;
+  --muted: #475569;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --accent: #0e7490; /* cyan đậm — đủ tương phản cho chữ trên nền sáng (5.4:1) */
+  --accent-bright: #3ed6e0; /* cyan logo — dùng cho đồ họa, viền, điểm nhấn */
+  --blue: #2563eb;
+  --on-accent: #ffffff;
+  --grid-line: rgb(15 23 42 / 0.05);
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -8px rgb(15 23 42 / 0.08);
+  --nav-bg: rgb(255 255 255 / 0.94);
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: #070b14;
+  --surface: #0c1322;
+  --surface-2: #111a2c;
+  --fg: #e6edf7;
+  --fg-soft: #cbd5e1;
+  --muted: #94a3b8;
+  --border: #1c263a;
+  --border-strong: #2a3650;
+  --accent: #3ed6e0;
+  --accent-bright: #3ed6e0;
+  --blue: #60a5fa;
+  --on-accent: #04121a;
+  --grid-line: rgb(148 163 184 / 0.06);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  --nav-bg: rgb(12 19 34 / 0.72);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-fg-soft: var(--fg-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-brand-blue: var(--blue);
+  --color-on-accent: var(--on-accent);
+
+  /* "Ink" — mảng tối cố định ở cả 2 chế độ (hero, CTA), lấy cảm hứng từ Lenzo/IndX */
+  --color-ink: #070b14;
+  --color-ink-2: #0d1526;
+  --color-ink-line: #1d2940;
+  --color-ink-fg: #e6edf7;
+  --color-ink-muted: #94a3b8;
+  --color-cyan: #3ed6e0;
+
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Inter Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', monospace;
+
+  --radius-panel: 1.75rem;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================ BASE */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+  ::selection { background: rgb(62 214 224 / 0.35); }
+  :focus-visible {
+    outline: 2px solid var(--accent-bright);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  a, button, [role='button'], summary, label[for] { cursor: pointer; }
+  img, video, canvas, svg { max-width: 100%; }
+}
+
+/* ============================================================ COMPONENTS */
+@layer components {
+  .container-x {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 768px) { .container-x { padding-inline: 2rem; } }
+
+  .section { padding-block: 4.5rem; }
+  @media (min-width: 1024px) { .section { padding-block: 7rem; } }
+
+  /* Lưới kỹ thuật mờ phía sau */
+  .bg-grid {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .eyebrow::before {
+    content: '';
+    width: 1.5rem;
+    height: 1px;
+    background: currentColor;
+  }
+
+  .hairline {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-bright), transparent);
+    opacity: 0.6;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.875rem;
+    padding: 0.7rem 1.35rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    transition: transform 0.2s var(--ease-out-expo), background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary {
+    background: var(--color-cyan);
+    color: #04121a;
+    box-shadow: 0 0 0 0 rgb(62 214 224 / 0);
+  }
+  .btn-primary:hover {
+    background: #6be3ea;
+    box-shadow: 0 8px 28px -8px rgb(62 214 224 / 0.65);
+  }
+  .btn-dark {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .btn-dark:hover { opacity: 0.88; }
+  .btn-ghost {
+    border: 1px solid var(--border-strong);
+    color: var(--fg);
+    background: transparent;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ghost-ink {
+    border: 1px solid rgb(148 163 184 / 0.35);
+    color: #e6edf7;
+  }
+  .btn-ghost-ink:hover { border-color: var(--color-cyan); color: var(--color-cyan); }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 0.8125rem;
+    color: var(--fg-soft);
+    white-space: nowrap;
+  }
+
+  .link-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .link-arrow svg { transition: transform 0.2s var(--ease-out-expo); }
+  .link-arrow:hover svg { transform: translateX(4px); }
+
+  /* Ô nhập liệu */
+  .field-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--fg); }
+  .field {
+    width: 100%;
+    min-height: 2.875rem;
+    padding: 0.7rem 0.95rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--fg);
+    font-size: 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field::placeholder { color: var(--muted); opacity: 0.8; }
+  .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(62 214 224 / 0.2); }
+  .field[aria-invalid='true'] { border-color: #dc2626; }
+  .field-error { margin-top: 0.35rem; font-size: 0.8125rem; color: #dc2626; }
+  [data-theme='dark'] .field-error { color: #f87171; }
+
+  /* Hiệu ứng xuất hiện khi cuộn */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo); }
+  .reveal.is-visible { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+  .no-js .reveal { opacity: 1; transform: none; }
+}
+
+/* ============================================================ BÀI VIẾT (prose) */
+.prose-eng {
+  color: var(--fg-soft);
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  max-width: 72ch;
+}
+.prose-eng > * + * { margin-top: 1.25em; }
+.prose-eng h2 { color: var(--fg); font-size: 1.6rem; margin-top: 2.2em; font-weight: 700; }
+.prose-eng h3 { color: var(--fg); font-size: 1.25rem; margin-top: 1.8em; font-weight: 600; }
+.prose-eng a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.prose-eng strong { color: var(--fg); }
+.prose-eng ul { list-style: disc; padding-left: 1.4em; }
+.prose-eng ol { list-style: decimal; padding-left: 1.4em; }
+.prose-eng li + li { margin-top: 0.4em; }
+.prose-eng li::marker { color: var(--accent); }
+.prose-eng code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+}
+.prose-eng pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 0.9rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+}
+.prose-eng pre code { background: none; border: 0; padding: 0; }
+.prose-eng blockquote {
+  border-left: 3px solid var(--accent-bright);
+  padding: 0.2em 0 0.2em 1.1em;
+  color: var(--fg);
+  font-style: normal;
+}
+.prose-eng table { width: 100%; border-collapse: collapse; font-size: 0.95rem; display: block; overflow-x: auto; }
+.prose-eng th, .prose-eng td { border-bottom: 1px solid var(--border); padding: 0.6em 0.8em; text-align: left; }
+.prose-eng th { color: var(--fg); font-family: var(--font-mono); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.prose-eng img { border-radius: 1rem; border: 1px solid var(--border); }
+.prose-eng .formula {
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  color: var(--fg);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

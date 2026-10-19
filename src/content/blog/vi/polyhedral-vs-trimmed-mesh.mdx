@@ -1,0 +1,59 @@
+---
+title: "Lưới Polyhedral hay Trimmed? Chọn đúng loại lưới trong STAR-CCM+"
+description: So sánh hai bộ chia lưới phổ biến nhất trong Simcenter STAR-CCM+ — ưu nhược điểm, khi nào dùng loại nào và mẹo kết hợp với prism layer.
+date: 2026-07-30
+category: fundamentals
+tags: [mesh, polyhedral, trimmed, STAR-CCM+]
+art: car
+sample: true
+---
+
+Simcenter STAR-CCM+ có nhiều bộ chia lưới thể tích, nhưng trong thực tế hơn 90% dự án mình làm chỉ dùng hai loại: **Polyhedral** và **Trimmed (Trimmer)**. Chọn đúng ngay từ đầu giúp tiết kiệm cả thời gian chia lưới lẫn thời gian giải.
+
+## Lưới Polyhedral
+
+Mỗi ô là một khối đa diện, trung bình khoảng **14 mặt**, nên có nhiều ô lân cận để tính gradient chính xác.
+
+**Ưu điểm**
+
+- Thích ứng tốt với **hình học phức tạp**: ống góp, linh kiện điện tử, mạch làm mát.
+- Cần **ít ô hơn** lưới tứ diện cho cùng độ chính xác.
+- Ít nhạy với hướng dòng chảy — phù hợp dòng xoáy, dòng nội bộ đổi hướng liên tục.
+
+**Nhược điểm**
+
+- Mỗi ô "nặng" hơn (nhiều mặt) → bộ nhớ cao hơn trên mỗi ô.
+- Khó kiểm soát làm mịn theo hướng (anisotropic) như vùng wake dài.
+
+## Lưới Trimmed
+
+Lưới chủ yếu là **khối lục diện** được cắt gọt tại bề mặt hình học, kèm làm mịn theo cấp độ (octree).
+
+**Ưu điểm**
+
+- Chất lượng ô rất cao, **căn thẳng theo dòng chính** → ít khuếch tán số khi dòng chảy song song với trục lưới.
+- Dễ tạo **vùng làm mịn dạng hộp/hình trụ** cho wake, vết xoáy — lý tưởng cho khí động học ngoài.
+- Hỗ trợ làm mịn **dị hướng** để tiết kiệm số ô.
+
+**Nhược điểm**
+
+- Kém linh hoạt với hình học có nhiều khe nhỏ, cong phức tạp.
+- Số ô có thể tăng nhanh nếu đặt làm mịn không hợp lý.
+
+## Khi nào dùng loại nào?
+
+| Bài toán | Gợi ý |
+|---|---|
+| Khí động học ngoài (ô tô, công trình) | **Trimmed** + vùng làm mịn wake |
+| Dòng nội bộ phức tạp, ống góp, van | **Polyhedral** |
+| CHT linh kiện điện tử, pin | **Polyhedral** (dễ ghép nhiều miền rắn/lỏng) |
+| Data center, nhà xưởng (không gian lớn) | **Trimmed** |
+| Bơm, quạt (vùng quay) | **Polyhedral** cho rotor, có thể Trimmed cho vùng tĩnh lớn |
+
+## Mẹo kết hợp với Prism Layer
+
+Cả hai loại đều kết hợp tốt với **Prism Layer Mesher** để giải lớp biên. Hãy chú ý chuyển tiếp giữa lớp prism cuối và ô lõi: với Trimmed, dùng *Prism Layer Total Thickness* tương đương kích thước ô bề mặt; với Polyhedral, giữ *growth rate* lõi ở mức "Medium" để chuyển tiếp mượt.
+
+## Kết luận
+
+Không có loại lưới "tốt nhất" — chỉ có loại **phù hợp nhất với vật lý và hình học** của bài toán. Hãy bắt đầu với gợi ý trong bảng trên, rồi luôn kiểm chứng bằng nghiên cứu độc lập lưới.

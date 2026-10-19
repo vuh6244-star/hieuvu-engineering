@@ -1,0 +1,58 @@
+---
+import { site } from '@/data/site';
+import type { Lang } from '@/i18n/ui';
+
+export interface SEOProps {
+  title: string;
+  description: string;
+  lang: Lang;
+  /** Đường dẫn bản tiếng Việt và tiếng Anh của trang (để khai báo hreflang) */
+  alternates: { vi?: string; en?: string };
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article' | 'profile';
+  publishedTime?: Date;
+  modifiedTime?: Date;
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const { title, description, lang, alternates, image = '/og-default.png', imageAlt, type = 'website', publishedTime, modifiedTime, noindex, jsonLd } = Astro.props as SEOProps;
+
+const base = Astro.site ?? new URL(site.url);
+const canonical = new URL(Astro.url.pathname, base).href;
+const fullTitle = title.includes('Hiếu Vũ') ? title : `${title} | ${site.brand}`;
+const ogImage = new URL(image, base).href;
+const gsc = import.meta.env.PUBLIC_GSC_VERIFICATION;
+const abs = (p?: string) => (p ? new URL(p, base).href : undefined);
+const ld = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, follow" />}
+{alternates.vi && <link rel="alternate" hreflang="vi" href={abs(alternates.vi)} />}
+{alternates.en && <link rel="alternate" hreflang="en" href={abs(alternates.en)} />}
+{alternates.vi && <link rel="alternate" hreflang="x-default" href={abs(alternates.vi)} />}
+
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={site.brand} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+{imageAlt && <meta property="og:image:alt" content={imageAlt} />}
+<meta property="og:locale" content={lang === 'vi' ? 'vi_VN' : 'en_US'} />
+<meta property="og:locale:alternate" content={lang === 'vi' ? 'en_US' : 'vi_VN'} />
+{publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
+{modifiedTime && <meta property="article:modified_time" content={modifiedTime.toISOString()} />}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+{gsc && <meta name="google-site-verification" content={gsc} />}
+
+{ld.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}

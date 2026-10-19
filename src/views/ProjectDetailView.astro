@@ -1,0 +1,114 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import FlowArt from '@/components/FlowArt.astro';
+import Icon from '@/components/Icon.astro';
+import ProjectCard from '@/components/ProjectCard.astro';
+import CtaPanel from '@/components/CtaPanel.astro';
+import YouTube from '@/components/YouTube.astro';
+import { projectCategories, site } from '@/data/site';
+import { formatDate, localize, useTranslations, type Lang } from '@/i18n/ui';
+import { getProjects, hasTranslation, slugOf, type Project } from '@/lib/content';
+
+interface Props { project: Project; lang: Lang }
+const { project, lang } = Astro.props;
+const t = useTranslations(lang);
+const L = (vi: string, en: string) => (lang === 'vi' ? vi : en);
+const d = project.data;
+const slug = slugOf(project.id);
+const { Content } = await render(project);
+const other: Lang = lang === 'vi' ? 'en' : 'vi';
+const alternates = {
+  [lang]: localize(`/projects/${slug}`, lang),
+  [other]: (await hasTranslation('projects', slug, other)) ? localize(`/projects/${slug}`, other) : undefined,
+} as { vi?: string; en?: string };
+const related = (await getProjects(lang)).filter((p) => p.id !== project.id).sort((a) => (a.data.category === d.category ? -1 : 1)).slice(0, 3);
+
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: d.title,
+  description: d.description,
+  dateCreated: d.date.toISOString(),
+  author: { '@type': 'Person', name: site.name, url: site.url },
+  keywords: [projectCategories[d.category][lang], ...d.tools].join(', '),
+  inLanguage: lang,
+};
+---
+
+<BaseLayout lang={lang} title={d.title} description={d.description} type="article" publishedTime={d.date} alternates={alternates} jsonLd={ld}>
+  <article>
+    <header class="pt-28 md:pt-36">
+      <div class="container-x">
+        <nav aria-label="Breadcrumb" class="font-mono text-xs text-muted">
+          <ol class="flex flex-wrap items-center gap-2">
+            <li><a href={localize('/', lang)} class="hover:text-accent">{t('nav.home')}</a></li>
+            <li aria-hidden="true">/</li>
+            <li><a href={localize('/projects', lang)} class="hover:text-accent">{t('nav.projects')}</a></li>
+            <li aria-hidden="true">/</li>
+            <li class="text-fg-soft" aria-current="page">{projectCategories[d.category][lang]}</li>
+          </ol>
+        </nav>
+        <h1 class="mt-6 max-w-4xl text-4xl font-semibold leading-[1.08] md:text-6xl">{d.title}</h1>
+        <p class="mt-6 max-w-3xl text-lg text-muted md:text-xl">{d.description}</p>
+      </div>
+      <div class="container-x mt-10">
+        <div class="overflow-hidden rounded-[var(--radius-panel)] border border-line bg-ink">
+          {
+            d.cover ? (
+              <Image src={d.cover} alt={d.coverAlt ?? d.title} widths={[800, 1280, 1920]} sizes="100vw" class="aspect-[16/8] w-full object-cover" loading="eager" />
+            ) : (
+              <FlowArt variant={d.art} class="aspect-[16/9] w-full md:aspect-[16/8]" label={d.coverAlt ?? d.title} eager />
+            )
+          }
+        </div>
+      </div>
+    </header>
+
+    <div class="container-x grid gap-12 py-14 lg:grid-cols-12 lg:py-20">
+      <aside class="lg:col-span-4 lg:order-2">
+        <div class="lg:sticky lg:top-28 space-y-5">
+          {
+            d.metrics.length > 0 && (
+              <dl class="grid grid-cols-2 gap-3 lg:grid-cols-1">
+                {d.metrics.map((m) => (
+                  <div class="card p-5">
+                    <dt class="text-sm text-muted">{m.label}</dt>
+                    <dd class="mt-1 font-mono text-2xl font-bold text-accent">{m.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )
+          }
+          <dl class="card divide-y divide-[var(--border)] text-sm">
+            <div class="flex justify-between gap-4 p-4"><dt class="text-muted">{t('projects.industry')}</dt><dd class="text-right font-medium text-fg">{d.industry}</dd></div>
+            <div class="flex justify-between gap-4 p-4"><dt class="text-muted">{L('Chuyên đề', 'Discipline')}</dt><dd class="text-right font-medium text-fg">{projectCategories[d.category][lang]}</dd></div>
+            <div class="flex justify-between gap-4 p-4"><dt class="text-muted">{t('projects.tools')}</dt><dd class="text-right font-medium text-fg">{d.tools.join(', ')}</dd></div>
+            <div class="flex justify-between gap-4 p-4"><dt class="text-muted">{L('Thời gian', 'Date')}</dt><dd class="text-right font-medium text-fg"><time datetime={d.date.toISOString()}>{formatDate(d.date, lang)}</time></dd></div>
+          </dl>
+          <a href={`${localize('/contact', lang)}?service=${d.category}`} class="btn btn-primary w-full">{L('Tôi có bài toán tương tự', 'I have a similar problem')} <Icon name="arrow-right" size={18} /></a>
+        </div>
+      </aside>
+      <div class="lg:col-span-8 lg:order-1">
+        <div class="prose-eng">
+          <Content />
+        </div>
+        {d.youtube && <div class="mt-10"><YouTube id={d.youtube} title={d.title} /></div>}
+      </div>
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="container-x border-t border-line pt-14" aria-labelledby="related-projects">
+        <h2 id="related-projects" class="text-2xl font-semibold">{t('projects.related')}</h2>
+        <div class="mt-8 grid gap-5 md:grid-cols-3">
+          {related.map((p) => <ProjectCard project={p} lang={lang} />)}
+        </div>
+      </section>
+    )
+  }
+  <CtaPanel lang={lang} />
+</BaseLayout>
+

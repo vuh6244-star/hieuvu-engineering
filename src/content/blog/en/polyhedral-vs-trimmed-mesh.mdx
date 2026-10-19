@@ -1,0 +1,59 @@
+---
+title: "Polyhedral or Trimmed? Choosing the right mesh in STAR-CCM+"
+description: A comparison of the two most used volume meshers in Simcenter STAR-CCM+ — pros, cons, when to use each, and tips for combining them with prism layers.
+date: 2026-07-30
+category: fundamentals
+tags: [mesh, polyhedral, trimmed, STAR-CCM+]
+art: car
+sample: true
+---
+
+Simcenter STAR-CCM+ offers several volume meshers, yet over 90% of my projects use just two: **Polyhedral** and **Trimmed (Trimmer)**. Picking the right one upfront saves both meshing and solving time.
+
+## Polyhedral mesh
+
+Each cell is a polyhedron with about **14 faces** on average, giving many neighbours for accurate gradient computation.
+
+**Pros**
+
+- Adapts well to **complex geometry**: manifolds, electronics, cooling circuits.
+- Needs **fewer cells** than tetrahedral meshes for the same accuracy.
+- Less sensitive to flow direction — good for swirling and constantly turning internal flows.
+
+**Cons**
+
+- Each cell is "heavier" (more faces) → higher memory per cell.
+- Harder to control directional (anisotropic) refinement such as long wakes.
+
+## Trimmed mesh
+
+Predominantly **hexahedral cells** trimmed at the geometry surface, with octree-based refinement.
+
+**Pros**
+
+- Very high cell quality, **aligned with the main flow** → low numerical diffusion when flow runs parallel to the grid.
+- Easy **box/cylinder refinement zones** for wakes and vortices — ideal for external aerodynamics.
+- Supports **anisotropic** refinement to save cells.
+
+**Cons**
+
+- Less flexible for geometry with many small gaps and complex curvature.
+- Cell count can grow quickly with careless refinement.
+
+## When to use which?
+
+| Problem | Suggestion |
+|---|---|
+| External aero (vehicles, buildings) | **Trimmed** + wake refinement |
+| Complex internal flow, manifolds, valves | **Polyhedral** |
+| CHT for electronics, batteries | **Polyhedral** (easy multi-region solid/fluid) |
+| Data centers, large halls | **Trimmed** |
+| Pumps, fans (rotating zones) | **Polyhedral** for the rotor, possibly Trimmed for large static regions |
+
+## Combining with prism layers
+
+Both mesh types work well with the **Prism Layer Mesher** to resolve boundary layers. Watch the transition between the last prism layer and the core cells: with Trimmed, match *Prism Layer Total Thickness* to the surface cell size; with Polyhedral, keep the core *growth rate* at "Medium" for a smooth transition.
+
+## Conclusion
+
+There is no "best" mesh — only the one that **best fits the physics and geometry** of your problem. Start with the table above, then always verify with a mesh independence study.

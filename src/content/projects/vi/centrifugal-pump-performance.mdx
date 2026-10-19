@@ -1,0 +1,36 @@
+---
+title: Mô phỏng bơm ly tâm — đường đặc tính H-Q và xâm thực
+description: Dự đoán cột áp, hiệu suất và nguy cơ xâm thực của bơm ly tâm ở nhiều điểm vận hành, đối chiếu với dữ liệu thử nghiệm của nhà sản xuất.
+date: 2026-01-20
+category: turbo
+industry: Bơm công nghiệp · Turbomachinery
+art: pump
+tools: [Simcenter STAR-CCM+, Siemens NX]
+featured: true
+sample: true
+metrics:
+  - label: Sai lệch cột áp so với thử nghiệm
+    value: "< 3%"
+  - label: Điểm vận hành
+    value: "7"
+---
+
+## Bài toán
+
+Nhà sản xuất bơm muốn **xây dựng đường đặc tính H-Q** cho một mẫu bánh công tác mới bằng mô phỏng, giảm số vòng thử nghiệm trên bệ thử, đồng thời đánh giá nguy cơ **xâm thực** ở lưu lượng lớn.
+
+## Phương pháp
+
+- Mô hình đầy đủ: ống hút, bánh công tác 7 cánh, buồng xoắn (volute) và ống đẩy.
+- Vùng quay dùng **MRF** cho các điểm vận hành ổn định; kiểm tra lại điểm thiết kế bằng **Rigid Body Motion** (chuyển động lưới thực).
+- Mô hình xâm thực **Schnerr-Sauer** để dự đoán vùng hơi tại mép vào cánh.
+
+## Kết quả
+
+Đường H-Q mô phỏng tại 7 điểm vận hành sai lệch **dưới 3%** so với dữ liệu thử nghiệm ở vùng hiệu suất cao. Ở 120% lưu lượng thiết kế, vùng hơi xuất hiện tại mép vào phía hút — cơ sở để đề xuất điều chỉnh góc vào cánh.
+
+## Bài học
+
+MRF đủ tốt cho đường đặc tính, nhưng **tương tác rotor–volute** cần RBM để nắm bắt dao động áp suất. Chọn đúng mức độ mô hình hóa giúp cân bằng giữa độ chính xác và thời gian tính toán.
+
+> *Lưu ý: đây là nội dung mẫu minh họa. Số liệu sẽ được cập nhật theo dự án thực tế.*
